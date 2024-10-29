@@ -20,6 +20,7 @@ classifiers = [
 ]
 dependencies = [
   "langchain>=0.3, <0.4",
+  "langchain-community>=0.3, <0.4",
   "langchain-openai>=0.2, <0.3",
   "langgraph>=0.2, <0.3",
   "pydantic>=2.9, <3.0",
@@ -34,12 +35,19 @@ config-path = "ruff.toml"
 [tool.hatch.envs.default]
 installer = "uv"
 
+[tool.hatch.envs.default.env-vars]
+OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
+
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
+  "pytest>=8.3, <9.0",
+  "pytest-asyncio>=0.24"
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/open_chatbot tests}"
+check = "mypy --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
+[tool.mypy]
+
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.feature.platforms = [
@@ -48,20 +56,22 @@ matrix.feature.platforms = [
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.11"]
 
-[tool.hatch.envs.hatch-test.env-vars]
-OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
+[tool.hatch.envs.hatch-test]
+extra-dependencies = [
+  "pytest-asyncio>=0.24"
+]
 
 [tool.coverage.run]
-source_pkgs = ["open_chatbot", "tests"]
+source_pkgs = ["llm_chatbot_for_messengers", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/open_chatbot/__about__.py",
+  "src/llm_chatbot_for_messengers/__about__.py",
 ]
 
 [tool.coverage.paths]
-open_chatbot = ["src/open_chatbot", "*/open-chatbot/src/open_chatbot"]
-tests = ["tests", "*/open-chatbot/tests"]
+llm_chatbot_for_messengers = ["src/llm_chatbot_for_messengers", "*/llm_chatbot_for_messengers/src/llm_chatbot_for_messengers"]
+tests = ["tests", "*/llm_chatbot_for_messengers/tests"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -69,6 +79,10 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "strict"
 
 [tool.hatch.envs.ci]
 extra-dependencies = [
