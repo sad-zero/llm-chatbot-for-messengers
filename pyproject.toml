@@ -41,6 +41,16 @@ extra-dependencies = [
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/open_chatbot tests}"
 
+[tool.hatch.envs.hatch-test.overrides]
+matrix.feature.platforms = [
+  { value = "macos"},
+]
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.11"]
+
+[tool.hatch.envs.hatch-test.env-vars]
+OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
+
 [tool.coverage.run]
 source_pkgs = ["open_chatbot", "tests"]
 branch = true
