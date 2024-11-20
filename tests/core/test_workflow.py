@@ -14,7 +14,7 @@ async def test_get_question_answer_workflow():
     answer_node_llm = FakeListLLM(responses=['Hi! What can I do for you?'])
     workflow = get_question_answer_workflow(answer_node_llm=answer_node_llm)  # type: ignore
     question_state: QAState = {
-        'question': 'Hello!',  # type: ignore
+        'question': 'Hello!',
     }
     # when
     answer_state: QAState = await workflow.ainvoke(question_state, debug=True)  # type: ignore

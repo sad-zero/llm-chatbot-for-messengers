@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 from llm_chatbot_for_messengers.core.agent import QAAgent
-from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.user import User
+from llm_chatbot_for_messengers.core.vo import LLMConfig, UserId, WorkflowNodeConfig
 
 
 @pytest.mark.parametrize(
@@ -33,3 +34,17 @@ def test_qa_agent_cached_workflow():
     workflow2 = agent.workflow
     # then
     assert id(workflow1) == id(workflow2)
+
+
+@pytest.mark.asyncio
+@pytest.mark.skip
+async def test_qa_agent_ask():
+    # given
+    user = User(user_id=UserId(user_seq=1))
+    workflow_configs = {'answer_node': WorkflowNodeConfig(node_name='answer_node', llm_config=LLMConfig())}
+    agent = QAAgent(workflow_configs=workflow_configs)
+    question: str = 'How do I make vlog?'
+    # when
+    answer: str = await agent.ask(user=user, question=question)
+    # then
+    assert answer is not None

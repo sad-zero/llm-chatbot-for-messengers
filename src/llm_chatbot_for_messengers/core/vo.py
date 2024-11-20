@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from enum import Enum, unique
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 from pydantic import BaseModel, Field
 
 
+class UserId(BaseModel):
+    user_seq: int = Field(description="User's sequence")
+
+
 class QAState(TypedDict):
     question: str
-    answer: str
+    answer: NotRequired[str]  # Filled by Agent
 
 
 @unique

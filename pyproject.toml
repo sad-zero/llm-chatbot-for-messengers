@@ -37,6 +37,9 @@ installer = "uv"
 
 [tool.hatch.envs.default.env-vars]
 OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
+LANGCHAIN_TRACING_V2 = "true"
+LANGCHAIN_API_KEY = "<<YOUR LANGSMITH API KEY>>"
+LANGCHAIN_PROJECT = "<<YOUR LANGSMITH PROJECT NAME>>"
 
 [tool.hatch.envs.dev]
 extra-dependencies = [
@@ -54,10 +57,6 @@ extra-dependencies = [
 [tool.hatch.envs.types.scripts]
 check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
 [tool.mypy]
-
-
-[tool.hatch.envs.hatch-test.env-vars]
-OPENAI_API_KEY = "test-api-key"
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.feature.platforms = [
