@@ -15,6 +15,9 @@ class QAState(TypedDict):
 class LLMProvider(Enum):
     OPENAI: str = 'OPENAI'
 
+    def __str__(self):
+        return self.value
+
 
 class LLMConfig(BaseModel):
     provider: LLMProvider = Field(description='LLM Provider', default=LLMProvider.OPENAI)

@@ -7,7 +7,7 @@ name = "llm-chatbot-for-messengers"
 dynamic = ["version"]
 description = 'LLM Chatbot for Messengers'
 readme = "README.md"
-requires-python = ">=3.11, <12"
+requires-python = ">=3.11, <3.12"
 license = "MIT"
 keywords = []
 authors = [
@@ -38,6 +38,13 @@ installer = "uv"
 [tool.hatch.envs.default.env-vars]
 OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
 
+[tool.hatch.envs.dev]
+extra-dependencies = [
+  "pytest>=8.3, <9.0",
+  "pytest-asyncio>=0.24",
+  "pre-commit >= 4.0",
+]
+
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
@@ -45,9 +52,12 @@ extra-dependencies = [
   "pytest-asyncio>=0.24"
 ]
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
+check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
 [tool.mypy]
 
+
+[tool.hatch.envs.hatch-test.env-vars]
+OPENAI_API_KEY = "test-api-key"
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.feature.platforms = [
