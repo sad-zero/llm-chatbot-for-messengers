@@ -24,6 +24,7 @@ dependencies = [
   "langchain-openai>=0.2, <0.3",
   "langgraph>=0.2, <0.3",
   "pydantic>=2.9, <3.0",
+  "fastapi==0.115.5",
 ]
 
 [tool.hatch.version]
@@ -36,10 +37,14 @@ config-path = "ruff.toml"
 installer = "uv"
 
 [tool.hatch.envs.default.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/llm-chatbot-for-messengers"
 OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
 LANGCHAIN_TRACING_V2 = "true"
 LANGCHAIN_API_KEY = "<<YOUR LANGSMITH API KEY>>"
 LANGCHAIN_PROJECT = "<<YOUR LANGSMITH PROJECT NAME>>"
+
+[tool.hatch.envs.default.scripts]
+pip = "$HATCH_UV pip {args}"
 
 [tool.hatch.envs.dev]
 extra-dependencies = [
@@ -47,6 +52,9 @@ extra-dependencies = [
   "pytest-asyncio>=0.24",
   "pre-commit >= 4.0",
 ]
+
+[tool.hatch.envs.dev.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/dev"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
