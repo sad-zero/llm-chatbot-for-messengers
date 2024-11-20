@@ -78,6 +78,9 @@ extra-dependencies = [
   "pytest-asyncio>=0.24"
 ]
 
+[tool.hatch.envs.hatch-test.env-vars]
+OPENAI_API_KEY = "<<TEST-API-KEY>>"
+
 [tool.coverage.run]
 source_pkgs = ["llm_chatbot_for_messengers", "tests"]
 branch = true

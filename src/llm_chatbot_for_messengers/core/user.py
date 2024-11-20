@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from llm_chatbot_for_messengers.core.vo import UserId
+from llm_chatbot_for_messengers.core.vo import UserId  # noqa: TCH001
 
 
 class User(BaseModel):
