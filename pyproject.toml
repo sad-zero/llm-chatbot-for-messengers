@@ -94,7 +94,7 @@ UV_PROJECT_ENVIRONMENT = ".venv/dev"
 
 [tool.hatch.envs.dev.scripts]
 install_precommit = "pre-commit install"
-kakao-api = "uvicorn --host 0.0.0.0 --port 8000 --reload --workers 1 --log-level debug --no-use-colors --app-dir src/llm_chatbot_for_messengers/messenger/kakao api:app 2>&1 | tee dev-kakao.log"
+kakao-api = "uvicorn --host 0.0.0.0 --port 8000 --reload --workers 1 --log-level debug --no-use-colors --app-dir src/llm_chatbot_for_messengers/messenger/kakao api:app 2>&1 >> dev-kakao.log"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
