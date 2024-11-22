@@ -24,6 +24,7 @@ dependencies = [
   "langchain-openai>=0.2, <0.3",
   "langgraph>=0.2, <0.3",
   "pydantic>=2.9, <3.0",
+  "uvicorn[standard]==0.32.0",
   "fastapi==0.115.5",
 ]
 
@@ -33,53 +34,16 @@ path = "src/llm_chatbot_for_messengers/__about__.py"
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "ruff.toml"
 
-[tool.hatch.envs.default]
-installer = "uv"
-
-[tool.hatch.envs.default.env-vars]
-UV_PROJECT_ENVIRONMENT = ".venv/llm-chatbot-for-messengers"
-OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
-LANGCHAIN_TRACING_V2 = "true"
-LANGCHAIN_API_KEY = "<<YOUR LANGSMITH API KEY>>"
-LANGCHAIN_PROJECT = "<<YOUR LANGSMITH PROJECT NAME>>"
-
-[tool.hatch.envs.default.scripts]
-pip = "$HATCH_UV pip {args}"
-
-[tool.hatch.envs.dev]
+[tool.hatch.envs.hatch-test]
 extra-dependencies = [
-  "pytest>=8.3, <9.0",
-  "pytest-asyncio>=0.24",
-  "pre-commit >= 4.0",
-]
-
-[tool.hatch.envs.dev.env-vars]
-UV_PROJECT_ENVIRONMENT = ".venv/dev"
-
-[tool.hatch.envs.types]
-extra-dependencies = [
-  "mypy>=1.0.0",
-  "pytest>=8.3, <9.0",
   "pytest-asyncio>=0.24"
 ]
-[tool.hatch.envs.types.scripts]
-check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
-[tool.mypy]
-
 [tool.hatch.envs.hatch-test.overrides]
 matrix.feature.platforms = [
   { value = "macos"},
 ]
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.11"]
-
-[tool.hatch.envs.hatch-test]
-extra-dependencies = [
-  "pytest-asyncio>=0.24"
-]
-
-[tool.hatch.envs.hatch-test.env-vars]
-OPENAI_API_KEY = "<<TEST-API-KEY>>"
 
 [tool.coverage.run]
 source_pkgs = ["llm_chatbot_for_messengers", "tests"]
@@ -104,10 +68,58 @@ exclude_lines = [
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "strict"
 
-[tool.hatch.envs.ci]
+[tool.hatch.envs.default]
+installer = "uv"
+
+[tool.hatch.envs.default.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/llm-chatbot-for-messengers"
+OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
+LANGCHAIN_TRACING_V2 = "true"
+LANGCHAIN_API_KEY = "<<YOUR LANGSMITH API KEY>>"
+LANGCHAIN_PROJECT = "<<YOUR LANGSMITH PROJECT NAME>>"
+
+[tool.hatch.envs.default.scripts]
+pip = "$HATCH_UV pip {args}"
+
+[tool.hatch.envs.dev]
 extra-dependencies = [
+  "pytest>=8.3, <9.0",
+  "pytest-asyncio>=0.24",
   "pre-commit >= 4.0",
+  "wheel",
 ]
 
-[tool.hatch.envs.ci.scripts]
+[tool.hatch.envs.dev.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/dev"
+
+[tool.hatch.envs.dev.scripts]
 install_precommit = "pre-commit install"
+kakao-api = "uvicorn --host 0.0.0.0 --port 8000 --reload --workers 1 --log-level debug --no-use-colors --app-dir src/llm_chatbot_for_messengers/messenger/kakao api:app 2>&1 | tee dev-kakao.log"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+  "pytest>=8.3, <9.0",
+  "pytest-asyncio>=0.24"
+]
+
+[tool.hatch.envs.types.scripts]
+check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
+[tool.mypy]
+
+[tool.hatch.envs.builder.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/builder"
+
+[tool.hatch.envs.builder.extra-scripts]
+lock = "mv uv.lock uv.lock.backup 2>/dev/null; $HATCH_UV lock"
+build-wheel = "$HATCH_UV sync --frozen && hatch build -t wheel"
+
+[tool.hatch.build.targets.wheel]
+sources = ["src"]
+only-packages = true
+packages = [
+  "src/llm_chatbot_for_messengers",
+]
+exclude = [
+  "**/__about__.py",
+]
