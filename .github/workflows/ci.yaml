@@ -54,6 +54,10 @@ jobs:
         run: |
           hatch test -c
   dependency:
+    needs:
+      - style
+      - test
+    if: github.ref == "refs/heads/main" || github.ref == "refs/heads/develop" || github.ref == "refs/heads/ci/write-workflow"
     runs-on: ubuntu-latest
     permissions:
       contents: write
