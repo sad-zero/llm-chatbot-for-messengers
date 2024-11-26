@@ -56,6 +56,9 @@ If you encounter any bugs or have suggestions for improvements, please open an i
 8. **Open a Pull Request**
    Navigate to the original repository and open a pull request (PR) from your branch. Provide a clear description of your changes and why they should be merged.
 
+9. **Check the Pull Request Status**
+   Make sure that your request has passed CI Workflow.
+
 ## Code of Conduct
 
 By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). We expect everyone to treat each other with respect and to contribute to a positive community.

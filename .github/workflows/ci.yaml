@@ -1,0 +1,103 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+jobs:
+  style:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: Actions/checkout@v4.2.2
+      - name: Setup environments
+        run: |
+          sudo apt update
+          sudo apt install pipx -y
+          pipx ensurepath
+          pipx install hatch
+      - name: Check style
+        run: |
+          hatch run types:check
+          hatch fmt
+      - name: Sync style
+        run: |
+          is_changed=$(git status | grep "Changes not staged for commit") || true
+          if [ -n "$is_changed" ]; then
+              echo "Sync style"
+              git config user.name "bot"
+              git config user.email "bot@love.you"
+              git add .
+              git commit -m "Sync style"
+              git push origin ${{ github.ref_name}}
+              
+          else
+              echo "Already sync style"
+          fi
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Actions/checkout@v4.2.2
+      - name: Setup environments
+        run: |
+          sudo apt update
+          sudo apt install pipx -y
+          pipx ensurepath
+          pipx install hatch
+      - name: Check tests
+        run: |
+          hatch test -c
+  dependency:
+    needs:
+      - style
+      - test
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'}}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: Actions/checkout@v4.2.2
+      - name: Setup environments
+        run: |
+          sudo apt update
+          sudo apt install pipx -y
+          pipx ensurepath
+          pipx install hatch
+          hatch config set dirs.env.virtual .venv
+      - name: Check whether dependencies are changed.
+        run: |
+          not_has_lock=$(hatch run builder:find-lock 2>&1) || true
+          if [ -n "$not_has_lock" ]; then
+              echo "Don't find lockfile."
+          else
+              echo "Find lockfile"
+          fi
+
+          is_updated=$(hatch run builder:check-lock 2>&1 | grep "error") || true
+          if [ -n "$is_updated" ]; then
+              if [ -n "$not_has_lock" ]; then
+                  echo "Create lockfile"
+              else
+                  echo "Update lockfile"
+              fi
+              
+              hatch run builder:update-lock
+          fi
+      - name: Sync dependencies
+        run: |
+          is_changed=$(git status | grep "uv.lock") || true
+          if [ -n "$is_changed" ]; then
+              echo "Sync dependencies"
+              git config user.name "bot"
+              git config user.email "bot@love.you"
+              git add uv.lock
+              git commit -m "Sync dependencies"
+              git push origin ${{ github.ref_name}}
+          else
+              echo "Already sync dependencies"
+          fi

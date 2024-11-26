@@ -10,9 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11, <3.12"
 license = "MIT"
 keywords = []
-authors = [
-  { name = "sad-zero", email = "zeroro.yun@gmail.com" },
-]
+authors = [{ name = "sad-zero", email = "zeroro.yun@gmail.com" }]
 classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.11",
@@ -35,17 +33,13 @@ path = "src/llm_chatbot_for_messengers/__about__.py"
 config-path = "ruff.toml"
 
 [tool.hatch.envs.hatch-test]
-extra-dependencies = [
-  "pytest-asyncio>=0.24"
-]
+extra-dependencies = ["pytest-asyncio>=0.24"]
 
 [tool.hatch.envs.hatch-test.env-vars]
-OPENAI_API_KEY="{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+OPENAI_API_KEY = "{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
 
 [tool.hatch.envs.hatch-test.overrides]
-matrix.feature.platforms = [
-  { value = "macos"},
-]
+matrix.feature.platforms = [{ value = "macos" }]
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.11"]
 
@@ -53,20 +47,17 @@ python = ["3.11"]
 source_pkgs = ["llm_chatbot_for_messengers"]
 branch = true
 parallel = true
-omit = [
-  "src/llm_chatbot_for_messengers/__about__.py",
-]
+omit = ["src/llm_chatbot_for_messengers/__about__.py"]
 
 [tool.coverage.paths]
-llm_chatbot_for_messengers = ["src/llm_chatbot_for_messengers", "*/llm_chatbot_for_messengers/src/llm_chatbot_for_messengers"]
+llm_chatbot_for_messengers = [
+  "src/llm_chatbot_for_messengers",
+  "*/llm_chatbot_for_messengers/src/llm_chatbot_for_messengers",
+]
 tests = ["tests", "*/llm_chatbot_for_messengers/tests"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
@@ -77,7 +68,7 @@ installer = "uv"
 
 [tool.hatch.envs.default.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/llm-chatbot-for-messengers"
-OPENAI_API_KEY="{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+OPENAI_API_KEY = "{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
 LANGCHAIN_TRACING_V2 = "{env:LANGCHAIN_TRACING_V2:false}"
 LANGCHAIN_API_KEY = "{env:LANGCHAIN_API_KEY:<<YOUR LANGSMITH API KEY>>}"
 LANGCHAIN_PROJECT = "{env:LANGCHAIN_PROJECT:<<YOUR LANGSMITH PROJECT NAME>>}"
@@ -105,7 +96,7 @@ shutdown-api = "ps aux | grep uvicorn | awk '{{print $2}}' | xargs kill -15"
 extra-dependencies = [
   "mypy>=1.0.0",
   "pytest>=8.3, <9.0",
-  "pytest-asyncio>=0.24"
+  "pytest-asyncio>=0.24",
 ]
 
 [tool.hatch.envs.types.scripts]
@@ -116,15 +107,13 @@ check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/l
 UV_PROJECT_ENVIRONMENT = ".venv/builder"
 
 [tool.hatch.envs.builder.extra-scripts]
-lock = "mv uv.lock uv.lock.backup 2>/dev/null; $HATCH_UV lock"
+find-lock = "$HATCH_UV lock --frozen"
+check-lock = "$HATCH_UV lock --locked"
+update-lock = "$HATCH_UV lock"
 build-wheel = "$HATCH_UV sync --frozen && hatch build -t wheel"
 
 [tool.hatch.build.targets.wheel]
 sources = ["src"]
 only-packages = true
-packages = [
-  "src/llm_chatbot_for_messengers",
-]
-exclude = [
-  "**/__about__.py",
-]
+packages = ["src/llm_chatbot_for_messengers"]
+exclude = ["**/__about__.py"]
