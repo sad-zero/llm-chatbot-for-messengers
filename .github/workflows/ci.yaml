@@ -4,7 +4,6 @@ on:
     branches:
       - main
       - develop
-      - ci/write-workflow
   pull_request:
     branches:
       - main
@@ -57,7 +56,7 @@ jobs:
     needs:
       - style
       - test
-    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/ci/write-workflow' }}
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'}}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -72,19 +71,19 @@ jobs:
           hatch config set dirs.env.virtual .venv
       - name: Check whether dependencies are changed.
         run: |
-          has_lock=$(hatch run builder:find-lock 2>&1) || true
-          if [ -n "$has_lock" ]; then
-              echo "Find lockfile"
-          else
+          not_has_lock=$(hatch run builder:find-lock 2>&1) || true
+          if [ -n "$not_has_lock" ]; then
               echo "Don't find lockfile."
+          else
+              echo "Find lockfile"
           fi
 
           is_updated=$(hatch run builder:check-lock 2>&1 | grep "error") || true
           if [ -n "$is_updated" ]; then
-              if [ -n "$has_lock" ]; then
-                  echo "Update lockfile"
-              else
+              if [ -n "$not_has_lock" ]; then
                   echo "Create lockfile"
+              else
+                  echo "Update lockfile"
               fi
               
               hatch run builder:update-lock
