@@ -2,15 +2,23 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from llm_chatbot_for_messengers.core.user import User
+from llm_chatbot_for_messengers.core.vo import UserId
 
-class User(BaseModel):
+
+class KakaoUser(BaseModel):
     id: str = Field(description="User's id")
     type: str = Field(description="User's type")
+
+    def to(self) -> User:
+        return User(
+            user_id=UserId(user_id=f'{self.type}@{self.id}'),
+        )
 
 
 class UserRequest(BaseModel):
     utterance: str = Field(description='Current utterance')
-    user: User = Field(description="User's detail")
+    user: KakaoUser = Field(description="User's detail")
 
 
 class ChatRequest(BaseModel):

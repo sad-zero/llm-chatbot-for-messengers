@@ -48,9 +48,9 @@ class QAAgent(BaseModel):
             config={
                 'run_name': 'QAAgent.ask',
                 'metadata': {
-                    'user': {
-                        'seq': user.user_id.user_seq,
-                    }
+                    'user': user.model_dump(
+                        mode='python',
+                    )
                 },
             },
         )  # type: ignore

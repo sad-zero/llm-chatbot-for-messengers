@@ -1,30 +1,21 @@
 import logging
+from typing import Annotated
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
+from llm_chatbot_for_messengers.core.agent import QAAgent
+from llm_chatbot_for_messengers.messenger.kakao.container import get_qa_agent
 from llm_chatbot_for_messengers.messenger.kakao.vo import ChatRequest, ChatResponse, ChatTemplate, SimpleTextOutput
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
+logger = logging.getLogger(__name__)
 app = FastAPI(title='Kakao LLM Chatbot')
 
 
 @app.post('/kakao/v1/chat')
-def chat(body: ChatRequest) -> ChatResponse:
-    log_msg: str = f'Request: {body}'
-    logger.debug(log_msg)
-    # TODO: Manage User ID
-    user_id = body.userRequest.user.id
-    user_type = body.userRequest.user.type
-
-    # TODO: Manager History
-    utterance: str = body.userRequest.utterance
-
-    # TODO: Response
-    msg = f"""
-    Hello, {user_id}@{user_type}.
-    You ask {utterance}.
-    """.strip()
-    simple_output = SimpleTextOutput.from_text(msg)
+async def chat(body: ChatRequest, qa_agent: Annotated[QAAgent, Depends(get_qa_agent)]) -> ChatResponse:
+    user = body.userRequest.user.to()
+    answer = await qa_agent.ask(user=user, question=body.userRequest.utterance)
+    simple_output = SimpleTextOutput.from_text(answer)
     return ChatResponse(template=ChatTemplate.from_outputs(simple_output))
