@@ -38,6 +38,10 @@ config-path = "ruff.toml"
 extra-dependencies = [
   "pytest-asyncio>=0.24"
 ]
+
+[tool.hatch.envs.hatch-test.env-vars]
+OPENAI_API_KEY="{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+
 [tool.hatch.envs.hatch-test.overrides]
 matrix.feature.platforms = [
   { value = "macos"},
@@ -73,10 +77,10 @@ installer = "uv"
 
 [tool.hatch.envs.default.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/llm-chatbot-for-messengers"
-OPENAI_API_KEY="<<YOUR OPENAI API KEY>>"
-LANGCHAIN_TRACING_V2 = "true"
-LANGCHAIN_API_KEY = "<<YOUR LANGSMITH API KEY>>"
-LANGCHAIN_PROJECT = "<<YOUR LANGSMITH PROJECT NAME>>"
+OPENAI_API_KEY="{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+LANGCHAIN_TRACING_V2 = "{env:LANGCHAIN_TRACING_V2:false}"
+LANGCHAIN_API_KEY = "{env:LANGCHAIN_API_KEY:<<YOUR LANGSMITH API KEY>>}"
+LANGCHAIN_PROJECT = "{env:LANGCHAIN_PROJECT:<<YOUR LANGSMITH PROJECT NAME>>}"
 
 [tool.hatch.envs.default.scripts]
 pip = "$HATCH_UV pip {args}"
