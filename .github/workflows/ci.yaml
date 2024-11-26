@@ -69,16 +69,25 @@ jobs:
           sudo apt install pipx -y
           pipx ensurepath
           pipx install hatch
+          hatch config set dirs.env.virtual .venv
       - name: Check whether dependencies are changed.
         run: |
           has_lock=$(hatch run builder:find-lock 2>&1) || true
           if [ -n "$has_lock" ]; then
               echo "Find lockfile"
-              is_updated=$(hatch run builder:check-lock 2>&1 | grep "error") || true
-              if [ -n "$is_updated" ]; then
+          else
+              echo "Don't find lockfile."
+          fi
+
+          is_updated=$(hatch run builder:check-lock 2>&1 | grep "error") || true
+          if [ -n "$is_updated" ]; then
+              if [ -n "$has_lock" ]; then
                   echo "Update lockfile"
-                  hatch run builder:update-lock
+              else
+                  echo "Create lockfile"
               fi
+              
+              hatch run builder:update-lock
           fi
       - name: Sync dependencies
         run: |
