@@ -24,7 +24,20 @@ jobs:
               run: |
                 hatch run types:check
                 hatch fmt
-                git status
+            - name: Sync style
+              run: |
+                is_changed=$(git status | grep "Changes not staged for commit") || true
+                if [ -n "$is_changed" ]; then
+                    echo "Sync style"
+                    git config user.name "bot"
+                    git config user.email "bot@love.you"
+                    git add .
+                    git commit -m "Sync style"
+                    git push origin ${{ github.ref_name}}
+                    
+                else
+                    echo "Already sync style"
+                fi
     test:
         runs-on: ubuntu-latest
         steps:
