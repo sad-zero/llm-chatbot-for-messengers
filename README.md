@@ -45,7 +45,8 @@ Make sure you have Python 3.11 installed. You can download it from the [official
    ```bash
    hatch run start
    ```
-
+#### Note
+- Execute `hatch config set dirs.env.virtual .venv` to create environments in the project.
 ### Usage
 
 Once the chatbot is running, you can interact with it through the Kakao messaging platform. Follow the instructions provided in the documentation to set up your Kakao bot.

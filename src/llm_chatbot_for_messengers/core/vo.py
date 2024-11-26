@@ -1,13 +1,21 @@
 from __future__ import annotations
 
 from enum import Enum, unique
-from typing import Any, NotRequired, TypedDict
+from typing import Any, NotRequired, Self, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class UserId(BaseModel):
-    user_seq: int = Field(description="User's sequence")
+    user_seq: int | None = Field(description="User's sequence", default=None)
+    user_id: str | None = Field(description="User's unique string", default=None)
+
+    @model_validator(mode='after')
+    def check_id(self) -> Self:
+        if (self.user_seq, self.user_id) == (None, None):
+            err_msg: str = 'One of id or seq should exist.'
+            raise ValueError(err_msg)
+        return self
 
 
 class QAState(TypedDict):
