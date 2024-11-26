@@ -57,7 +57,7 @@ jobs:
     needs:
       - style
       - test
-    if: contains(['refs/heads/main', 'refs/heads/develop', 'refs/heads/ci/write-workflow'], github.ref)
+    if: ${{ contains(['refs/heads/main', 'refs/heads/develop', 'refs/heads/ci/write-workflow'], github.ref) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
