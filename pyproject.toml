@@ -50,7 +50,7 @@ matrix.feature.platforms = [
 python = ["3.11"]
 
 [tool.coverage.run]
-source_pkgs = ["llm_chatbot_for_messengers", "tests"]
+source_pkgs = ["llm_chatbot_for_messengers"]
 branch = true
 parallel = true
 omit = [

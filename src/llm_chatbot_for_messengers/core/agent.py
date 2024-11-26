@@ -5,32 +5,28 @@ Domain
 from __future__ import annotations
 
 import logging
+from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated
 
 from langchain_openai import ChatOpenAI
 from pydantic import AfterValidator, BaseModel, Field
+from typing_extensions import override
 
 from llm_chatbot_for_messengers.core.specification import check_necessary_nodes, check_workflow_configs  # noqa: TCH001
+from llm_chatbot_for_messengers.core.user import User
 from llm_chatbot_for_messengers.core.vo import LLMConfig, LLMProvider, QAState, WorkflowNodeConfig
 from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflow
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
 
-    from llm_chatbot_for_messengers.core.user import User
     from llm_chatbot_for_messengers.core.workflow import Workflow
 
 logger = logging.getLogger(__name__)
 
 
-class QAAgent(BaseModel):
-    workflow_configs: Annotated[
-        dict[str, WorkflowNodeConfig],
-        AfterValidator(check_workflow_configs),
-        AfterValidator(check_necessary_nodes('answer_node')),
-    ] = Field(description='Key equals to WorkflowNodeConfig.node_name')
-
+class QAAgent(ABC):
     async def ask(self, user: User, question: str) -> str:
         """Ask question
 
@@ -40,6 +36,26 @@ class QAAgent(BaseModel):
         Returns:
             str: Agent's answer
         """
+        if not isinstance(user, User) or not isinstance(question, str):
+            err_msg: str = f'Invalid arguments: user: {user}, question: {question}'
+            raise TypeError(err_msg)
+
+        return await self._ask(user=user, question=question)
+
+    @abstractmethod
+    async def _ask(self, user: User, question: str) -> str:
+        pass
+
+
+class QAAgentImpl(BaseModel, QAAgent):
+    workflow_configs: Annotated[
+        dict[str, WorkflowNodeConfig],
+        AfterValidator(check_workflow_configs),
+        AfterValidator(check_necessary_nodes('answer_node')),
+    ] = Field(description='Key equals to WorkflowNodeConfig.node_name')
+
+    @override
+    async def _ask(self, user: User, question: str) -> str:
         initial: QAState = {
             'question': question,
         }
