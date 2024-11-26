@@ -14,5 +14,10 @@ def test_chat(client):
             },
         },
     )
+
+
+
+
+    
     assert response.status_code == 200
     assert ChatResponse(**response.json())

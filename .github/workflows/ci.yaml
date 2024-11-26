@@ -22,9 +22,9 @@ jobs:
                 pipx install hatch
             - name: Check style
               run: |
-                hatch fmt
-                bash -c "exit 1"
                 hatch run types:check
+                hatch fmt
+                git status
     test:
         runs-on: ubuntu-latest
         steps:
