@@ -23,6 +23,7 @@ jobs:
             - name: Check style
               run: |
                 hatch fmt
+                bash -c "exit 1"
                 hatch run types:check
     test:
         runs-on: ubuntu-latest
