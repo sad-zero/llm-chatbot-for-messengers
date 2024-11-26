@@ -57,7 +57,7 @@ jobs:
     needs:
       - style
       - test
-    if: github.ref == "refs/heads/main" || github.ref == "refs/heads/develop" || github.ref == "refs/heads/ci/write-workflow"
+    if: contains(['refs/heads/main', 'refs/heads/develop', 'refs/heads/ci/write-workflow'], github.ref)
     runs-on: ubuntu-latest
     permissions:
       contents: write
