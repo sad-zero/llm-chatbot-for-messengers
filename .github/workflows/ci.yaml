@@ -21,6 +21,7 @@ jobs:
           sudo apt install pipx -y
           pipx ensurepath
           pipx install hatch
+          hatch config set dirs.env.virtual .venv
       - name: Check style
         run: |
           hatch run types:check
