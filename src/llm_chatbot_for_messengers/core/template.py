@@ -51,6 +51,7 @@ answer_tones = [
 ---
 # Here are the admissible **RULEs** by asserts:
 assert "Please answer in **KOREAN**"
+assert "Please answer in **JSON**"
 assert "Please answer in **THREE sentences**"
 assert "Stay focused and dedicated to your goals. Your consistent efforts will lead to outstanding achievements"
 ---

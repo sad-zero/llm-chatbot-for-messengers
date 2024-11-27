@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING
 
 import pytest
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
 @pytest.mark.asyncio(loop_scope='function')
 async def test_get_question_answer_workflow():
     # given
-    answer_node_llm = FakeListLLM(responses=['Hi! What can I do for you?'])
+    answer_node_llm = FakeListLLM(responses=[json.dumps({'answer': 'Hi! What can I do for you?'})])
     workflow = get_question_answer_workflow(answer_node_llm=answer_node_llm)  # type: ignore
     question_state: QAState = {
         'question': 'Hello!',
