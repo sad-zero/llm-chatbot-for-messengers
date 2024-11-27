@@ -13,7 +13,12 @@ from langchain_openai import ChatOpenAI
 from pydantic import AfterValidator, BaseModel, Field
 from typing_extensions import override
 
-from llm_chatbot_for_messengers.core.specification import check_necessary_nodes, check_workflow_configs  # noqa: TCH001
+from llm_chatbot_for_messengers.core.error import SpecificationError
+from llm_chatbot_for_messengers.core.specification import (
+    check_necessary_nodes,
+    check_timeout,
+    check_workflow_configs,
+)
 from llm_chatbot_for_messengers.core.user import User
 from llm_chatbot_for_messengers.core.vo import LLMConfig, LLMProvider, QAState, WorkflowNodeConfig
 from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflow
@@ -27,24 +32,47 @@ logger = logging.getLogger(__name__)
 
 
 class QAAgent(ABC):
-    async def ask(self, user: User, question: str) -> str:
+    async def ask(self, user: User, question: str, timeout: int | None = None) -> str:
         """Ask question
 
         Args:
-            user    (User): User Information
-            question (str): User's question
+            user          (User): User Information
+            question       (str): User's question
+            timeout (int | None): Timeout seconds
         Returns:
             str: Agent's answer
         """
         if not isinstance(user, User) or not isinstance(question, str):
             err_msg: str = f'Invalid arguments: user: {user}, question: {question}'
             raise TypeError(err_msg)
-
-        return await self._ask(user=user, question=question)
+        try:
+            if timeout is None:
+                return await self._ask(user=user, question=question)
+            traced = check_timeout(self.__class__._ask, timeout=timeout)  # noqa: SLF001
+            return await traced(self=self, user=user, question=question)
+        except SpecificationError:
+            logger.exception('')
+            return await self._fallback(user=user, question=question)
 
     @abstractmethod
     async def _ask(self, user: User, question: str) -> str:
-        pass
+        """Answer user's question
+        Args:
+            user    (User): User Information
+            question (str): User's question
+        Returns:
+            str: Agent's answer
+        """
+
+    @abstractmethod
+    async def _fallback(self, user: User, question: str) -> str:
+        """Fallback message based on user's question(**Return immidiately**)
+        Args:
+            user    (User): User Information
+            question (str): User's question
+        Returns:
+            str: Static fallback message
+        """
 
 
 class QAAgentImpl(BaseModel, QAAgent):
@@ -53,6 +81,7 @@ class QAAgentImpl(BaseModel, QAAgent):
         AfterValidator(check_workflow_configs),
         AfterValidator(check_necessary_nodes('answer_node')),
     ] = Field(description='Key equals to WorkflowNodeConfig.node_name')
+    fallback_message: str = Field(description='Fallback message is returned when normal flows fail')
 
     @override
     async def _ask(self, user: User, question: str) -> str:
@@ -72,6 +101,16 @@ class QAAgentImpl(BaseModel, QAAgent):
         )  # type: ignore
         result: str = response['answer']
         return result
+
+    @override
+    async def _fallback(self, user: User, question: str) -> str:
+        log_info = {
+            'user': user.model_dump(),
+            'question': question,
+        }
+        log_msg: str = f'fallback: {log_info}'
+        logger.warning(log_msg)
+        return self.fallback_message
 
     @cached_property
     def workflow(self) -> Workflow:

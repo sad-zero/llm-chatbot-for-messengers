@@ -4,9 +4,11 @@ Domain Specification
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import time
 from functools import partial, wraps
+from threading import Thread
 from typing import TYPE_CHECKING, Any, Callable
 
 from llm_chatbot_for_messengers.core.error import SpecificationError
@@ -60,29 +62,44 @@ def check_timeout(func: Callable[..., Any], *, timeout: int) -> Callable[..., An
         err_msg = 'func should be function'
         raise TypeError(err_msg)
 
-    err_msg_template: str = '{elapsed: .2f} is longer than {timeout}'
+    err_msg_template: str = 'timeout: {elapsed: .2f} is longer than {timeout}'
 
     @wraps(func)
     def wrapper(*args, **kwargs) -> Any:
+        def _func_in_thread(*args, **kwargs) -> None:
+            placeholder = kwargs.pop('placeholder')
+            result: Any = func(*args, **kwargs)
+            placeholder.append(result)
+
+        placeholder: list[Any] = []
+        if 'placeholder' in inspect.signature(func).parameters:
+            err_msg = 'function should not have `placeholder` parameter'
+            raise KeyError(err_msg)
+        t = Thread(target=_func_in_thread, args=args, kwargs=kwargs | {'placeholder': placeholder})
         s: float = time.time()
-        result: Any = func(*args, **kwargs)
+        t.start()
+        t.join(timeout=timeout)
         e: float = time.time()
         elapsed: float = e - s
         if elapsed >= timeout:
             err_msg = err_msg_template.format(elapsed=elapsed, timeout=timeout)
             raise SpecificationError(err_msg)
-        return result
+        return placeholder[0]
 
     @wraps(func)
     async def awrapper(*args, **kwargs) -> Any:
         s: float = time.time()
-        result: Any = await func(*args, **kwargs)
-        e: float = time.time()
-        elapsed: float = e - s
-        if elapsed >= timeout:
-            err_msg = err_msg_template.format(elapsed=elapsed, timeout=timeout)
-            raise SpecificationError(err_msg)
-        return result
+        try:
+            async with asyncio.timeout(timeout):
+                result: Any = await func(*args, **kwargs)
+        except TimeoutError as err:
+            e: float = time.time()
+            elapsed: float = e - s
+            if elapsed >= timeout:
+                err_msg = err_msg_template.format(elapsed=elapsed, timeout=timeout)
+                raise SpecificationError(err_msg) from err
+        else:
+            return result
 
     if inspect.iscoroutinefunction(func):
         return awrapper

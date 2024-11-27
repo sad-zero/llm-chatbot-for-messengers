@@ -11,7 +11,8 @@ def get_qa_agent() -> Generator[QAAgent, None, None]:
     """
     try:
         agent = QAAgentImpl(
-            workflow_configs={'answer_node': WorkflowNodeConfig(node_name='answer_node', llm_config=LLMConfig())}
+            workflow_configs={'answer_node': WorkflowNodeConfig(node_name='answer_node', llm_config=LLMConfig())},
+            fallback_message='미안해요. ㅠㅠ 질문이 너무 어려워요..',
         )
         yield agent
     finally:

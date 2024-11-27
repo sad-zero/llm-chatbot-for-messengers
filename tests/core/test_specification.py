@@ -22,6 +22,7 @@ async def _async_func(elapsed: int):
         (1.7, 2, 'ok'),
         (2, 2, 'error'),
         (2.1, 2, 'error'),
+        (3.1, 2, 'error'),
     ],
 )
 def test_check_timeout_normal(elapsed, timeout, expected):
@@ -30,8 +31,11 @@ def test_check_timeout_normal(elapsed, timeout, expected):
         case 'ok':
             assert traced(elapsed)
         case 'error':
+            s = time.time()
             with pytest.raises(SpecificationError):
-                assert traced(elapsed)
+                traced(elapsed)
+            e = time.time()
+            assert abs((e - s) - timeout) < 0.5
 
 
 @pytest.mark.parametrize(

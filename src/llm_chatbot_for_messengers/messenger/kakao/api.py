@@ -16,6 +16,6 @@ app = FastAPI(title='Kakao LLM Chatbot')
 @app.post('/kakao/v1/chat')
 async def chat(body: ChatRequest, qa_agent: Annotated[QAAgent, Depends(get_qa_agent)]) -> ChatResponse:
     user = body.userRequest.user.to()
-    answer = await qa_agent.ask(user=user, question=body.userRequest.utterance)
+    answer = await qa_agent.ask(user=user, question=body.userRequest.utterance, timeout=4)
     simple_output = SimpleTextOutput.from_text(answer)
     return ChatResponse(template=ChatTemplate.from_outputs(simple_output))
