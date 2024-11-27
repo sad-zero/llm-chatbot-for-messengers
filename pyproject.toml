@@ -66,6 +66,10 @@ asyncio_mode = "strict"
 [tool.hatch.envs.default]
 installer = "uv"
 
+pre-install-commands = [
+  "$HATCH_UV sync --frozen > /dev/null 2>&1 || true" # Sync uv.lock if lockfile exists.
+]
+
 [tool.hatch.envs.default.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/llm-chatbot-for-messengers"
 OPENAI_API_KEY = "{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
@@ -98,6 +102,9 @@ extra-dependencies = [
   "pytest>=8.3, <9.0",
   "pytest-asyncio>=0.24",
 ]
+
+[tool.hatch.envs.types.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/types"
 
 [tool.hatch.envs.types.scripts]
 check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
