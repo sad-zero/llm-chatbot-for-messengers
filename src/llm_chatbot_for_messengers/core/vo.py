@@ -45,3 +45,7 @@ class LLMConfig(BaseModel):
 class WorkflowNodeConfig(BaseModel):
     node_name: str = Field(description='Workflow node name')
     llm_config: LLMConfig | None = Field(description="Workflow node's LLM Config", default=None)
+
+
+class AnswerNodeResponse(BaseModel):
+    answer: str = Field(description="Answer node's output")

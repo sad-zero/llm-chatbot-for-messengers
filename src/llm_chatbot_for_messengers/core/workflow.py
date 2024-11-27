@@ -3,14 +3,13 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, TypeAlias
 
-from langchain.schema import StrOutputParser
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.graph import CompiledGraph
 
 from llm_chatbot_for_messengers.core.template import get_template
-from llm_chatbot_for_messengers.core.vo import QAState
+from llm_chatbot_for_messengers.core.vo import AnswerNodeResponse, QAState
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -45,10 +44,10 @@ async def answer_node(state: QAState, llm: BaseChatModel) -> QAState:
         raise RuntimeError(error_msg)
 
     template = get_template(node_name='answer_node')
-    chain: Runnable = {'question': RunnablePassthrough()} | template | llm | StrOutputParser()
-    answer = await chain.ainvoke(state['question'])
+    chain: Runnable = {'question': RunnablePassthrough()} | template | llm.with_structured_output(AnswerNodeResponse)
+    answer: AnswerNodeResponse = await chain.ainvoke(state['question'])
     return {
-        'answer': answer,  # type: ignore
+        'answer': answer.answer,  # type: ignore
     }
 
 
