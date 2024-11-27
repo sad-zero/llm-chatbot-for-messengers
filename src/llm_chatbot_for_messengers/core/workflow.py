@@ -47,7 +47,9 @@ async def answer_node(state: QAState, llm: BaseChatModel) -> QAState:
     template = get_template(node_name='answer_node')
     try:
         chain: Runnable = (
-            {'question': RunnablePassthrough()} | template | llm.with_structured_output(AnswerNodeResponse)
+            {'question': RunnablePassthrough()}
+            | template
+            | llm.with_structured_output(AnswerNodeResponse, method='json_schema')
         )
     except NotImplementedError:
         chain = (

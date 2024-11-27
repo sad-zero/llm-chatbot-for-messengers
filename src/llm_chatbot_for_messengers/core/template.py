@@ -51,12 +51,11 @@ answer_tones = [
 ---
 # Here are the admissible **RULEs** by asserts:
 assert "Please answer in **KOREAN**"
-assert "Please answer in **JSON**"
 assert "Please answer in **THREE sentences**"
 assert "Stay focused and dedicated to your goals. Your consistent efforts will lead to outstanding achievements"
 ---
 # Here are the admissible **ACTIONs** by functions:
-def answer(question: str) -> str:
+def ask(question: str) -> str:
     """
     Args:
         question (str): The curious question.
@@ -72,7 +71,13 @@ class Result(TypedDict):
 # Now, human requests the action:
                     '''.strip(),
                 ),
-                ('human', '{question}'),
+                (
+                    'human',
+                    """
+question: str = {question}
+ask(question)
+                          """.strip(),
+                ),
             ])
         case _:
             error_msg: str = f'There are no templates for {template_name}'
