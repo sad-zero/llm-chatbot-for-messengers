@@ -27,6 +27,9 @@ dependencies = [
   "PyYAML>=6.0, <6.1",
 ]
 
+[project.scripts]
+kakao_chatbot = "llm_chatbot_for_messengers.main:run_kakao_chatbot"
+
 [tool.hatch.version]
 path = "src/llm_chatbot_for_messengers/__about__.py"
 
