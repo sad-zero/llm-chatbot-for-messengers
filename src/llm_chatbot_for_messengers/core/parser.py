@@ -30,7 +30,7 @@ class PromptTemplateParser(ABC):
 
         prompt_dir: str | None = os.getenv('PROMPT_DIR')
         if prompt_dir is None:
-            prompt_dir_path: Path = Path('src/resources/prompt/answer_node')
+            prompt_dir_path: Path = Path('src/resources/prompt')
         else:
             try:
                 prompt_dir_path = Path(prompt_dir)

@@ -1,4 +1,4 @@
-name: test.yaml
+name: test
 node: answer_node
 version: 1
 templates:

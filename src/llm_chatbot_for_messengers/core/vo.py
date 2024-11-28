@@ -44,6 +44,7 @@ class LLMConfig(BaseModel):
 
 class WorkflowNodeConfig(BaseModel):
     node_name: str = Field(description='Workflow node name')
+    template_name: str | None = Field(description='Workflow node prompt template name', default=None)
     llm_config: LLMConfig | None = Field(description="Workflow node's LLM Config", default=None)
 
 

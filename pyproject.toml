@@ -94,6 +94,7 @@ extra-dependencies = [
 
 [tool.hatch.envs.dev.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/dev"
+PROMPT_DIR = "src/resources/prompt"
 
 [tool.hatch.envs.dev.scripts]
 install_precommit = "pre-commit install"
