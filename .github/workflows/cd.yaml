@@ -5,15 +5,12 @@ on:
       - CI
     types:
       - completed
-    branches:
-      - main
-      - develop
 env:
   IMAGE_NAME: llm-chatbot-for-messengers
 jobs:
     build:
         runs-on: ubuntu-latest
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        if: github.event.workflow_run.conclusion == 'success' && (github.ref_name == 'main' || github.ref_name == 'develop')
         steps:
         - uses: actions/checkout@v4.2.2
         - name: 'Login via Azure CLI'
