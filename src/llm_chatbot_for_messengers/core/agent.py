@@ -118,7 +118,9 @@ class QAAgentImpl(BaseModel, QAAgent):
         answer_node_llm: BaseChatModel | None = None
         if answer_node_config.llm_config is not None:
             answer_node_llm = self.__build_llm(llm_config=answer_node_config.llm_config)
-        return get_question_answer_workflow(answer_node_llm=answer_node_llm)
+        return get_question_answer_workflow(
+            answer_node_llm=answer_node_llm, answer_node_template_name=answer_node_config.template_name
+        )
 
     @staticmethod
     def __build_llm(llm_config: LLMConfig) -> BaseChatModel:

@@ -24,6 +24,7 @@ dependencies = [
   "pydantic>=2.9, <3.0",
   "uvicorn[standard]==0.32.0",
   "fastapi==0.115.5",
+  "PyYAML>=6.0, <6.1",
 ]
 
 [tool.hatch.version]
@@ -37,6 +38,7 @@ extra-dependencies = ["pytest-asyncio>=0.24"]
 
 [tool.hatch.envs.hatch-test.env-vars]
 OPENAI_API_KEY = "{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+PROMPT_DIR = "tests/resources/prompt"
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.feature.platforms = [{ value = "macos" }]
@@ -77,6 +79,8 @@ LANGCHAIN_TRACING_V2 = "{env:LANGCHAIN_TRACING_V2:false}"
 LANGCHAIN_API_KEY = "{env:LANGCHAIN_API_KEY:<<YOUR LANGSMITH API KEY>>}"
 LANGCHAIN_PROJECT = "{env:LANGCHAIN_PROJECT:<<YOUR LANGSMITH PROJECT NAME>>}"
 
+PROMPT_DIR = "src/resources/prompt"
+
 [tool.hatch.envs.default.scripts]
 pip = "$HATCH_UV pip {args}"
 
@@ -90,6 +94,7 @@ extra-dependencies = [
 
 [tool.hatch.envs.dev.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/dev"
+PROMPT_DIR = "src/resources/prompt"
 
 [tool.hatch.envs.dev.scripts]
 install_precommit = "pre-commit install"
@@ -101,6 +106,7 @@ extra-dependencies = [
   "mypy>=1.0.0",
   "pytest>=8.3, <9.0",
   "pytest-asyncio>=0.24",
+  "types-PyYAML>=6.0, <6.1",
 ]
 
 [tool.hatch.envs.types.env-vars]

@@ -18,14 +18,15 @@ if TYPE_CHECKING:
 Workflow: TypeAlias = CompiledGraph
 
 
-async def answer_node(state: QAState, llm: BaseChatModel) -> QAState:
+async def answer_node(state: QAState, llm: BaseChatModel, template_name: str | None = None) -> QAState:
     """Make a final answer.
 
     Args:
-        state (QAState): {
+        state            (QAState): {
             "question": ...
         }
-        llm (BaseChatModel): LLM for answer node
+        llm        (BaseChatModel): LLM for answer node
+        template_name (str | None): Prompt Template name
     Returns:
         QAState: {
             "answer": ...
@@ -44,7 +45,7 @@ async def answer_node(state: QAState, llm: BaseChatModel) -> QAState:
     if error_msg:
         raise RuntimeError(error_msg)
 
-    template = get_template(node_name='answer_node')
+    template = get_template(node_name='answer_node', template_name=template_name)
     try:
         chain: Runnable = (
             {'question': RunnablePassthrough()}
@@ -65,16 +66,19 @@ async def answer_node(state: QAState, llm: BaseChatModel) -> QAState:
     }
 
 
-def get_question_answer_workflow(answer_node_llm: BaseChatModel | None = None) -> Workflow:
+def get_question_answer_workflow(
+    answer_node_llm: BaseChatModel | None = None, answer_node_template_name: str | None = None
+) -> Workflow:
     """
     Args:
-        answer_node_llm(BaseChatModel | None): LLM for answer node
+        answer_node_llm (BaseChatModel | None): LLM for answer node
+        answer_node_template_name (str | None): Prompt template for answer node
     Returns:
         Workflow: Question Answer Workflow
     """
     if answer_node_llm is None:
         answer_node_llm = ChatOpenAI(model='gpt-4o-2024-08-06', temperature=0.52, top_p=0.7, max_tokens=200)
-    answer_node_with_llm = partial(answer_node, llm=answer_node_llm)
+    answer_node_with_llm = partial(answer_node, llm=answer_node_llm, template_name=answer_node_template_name)
     builder = StateGraph(QAState)
     builder.add_node('answer_node', answer_node_with_llm)
     builder.set_entry_point('answer_node')

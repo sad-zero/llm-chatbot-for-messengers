@@ -14,6 +14,7 @@ def get_qa_agent() -> Generator[QAAgent, None, None]:
             workflow_configs={
                 'answer_node': WorkflowNodeConfig(
                     node_name='answer_node',
+                    template_name='kakao_v1',
                     llm_config=LLMConfig(model='gpt-4o-2024-08-06', temperature=0.52, max_tokens=200),
                 )
             },
