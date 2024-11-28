@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from langchain.prompts import BasePromptTemplate, ChatPromptTemplate
 
+from llm_chatbot_for_messengers.core.parser import get_parser
+
 
 def get_template(node_name: str, template_name: str | None = None) -> BasePromptTemplate:
     """Get Prompt Template
@@ -19,7 +21,7 @@ def get_template(node_name: str, template_name: str | None = None) -> BasePrompt
             return _get_template_of_answer_node(template_name=template_name)
         case _:
             error_msg: str = f'There are no templates for {node_name}'
-            raise RuntimeError(error_msg)
+            raise ValueError(error_msg)
 
 
 def _get_template_of_answer_node(template_name: str | None) -> BasePromptTemplate:
@@ -80,5 +82,7 @@ ask(question)
                 ),
             ])
         case _:
-            error_msg: str = f'There are no templates for {template_name}'
-            raise RuntimeError(error_msg)
+            if not isinstance(template_name, str):
+                err_msg: str = f'template_name({template_name}) should be str'
+                raise TypeError(err_msg)
+            return get_parser().parse_file(node_name='answer_node', template_name=template_name)

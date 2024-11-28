@@ -1,3 +1,4 @@
+import re
 from typing import Literal
 
 import pytest
@@ -18,5 +19,5 @@ def test_get_template(node_name: str, template_name: str, expected: Literal['ok'
     if expected == 'ok':
         assert isinstance(get_template(node_name=node_name, template_name=template_name), BasePromptTemplate)
     else:
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError, match=re.compile(r'There are|exist')):
             get_template(node_name=node_name, template_name=template_name)
