@@ -6,7 +6,7 @@ def test_yaml_parser():
     # given
     parser = YamlPromptTemplateParser()
     node_name = 'test_node'
-    template_name = 'test.yaml'
+    template_name = 'test'
     expected = ChatPromptTemplate.from_messages([
         ('system', 'Please act as a helpful question-answering agent.'),
         ('human', 'my question is {question}'),

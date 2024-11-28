@@ -99,6 +99,10 @@ class YamlPromptTemplateParser(PromptTemplateParser):
             err_msg = f'Parsing fails: {raw_template}'
             raise ParserError(err_msg) from e
 
+    @override
+    def parse_file(self, node_name: str, template_name: str) -> ChatPromptTemplate:
+        return super().parse_file(node_name, f'{template_name}.yaml')
+
 
 @lru_cache(maxsize=1)
 def get_parser() -> PromptTemplateParser:
