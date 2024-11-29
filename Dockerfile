@@ -15,5 +15,10 @@ WORKDIR /llm-chatbot-for-messengers
 COPY --from=builder /llm-chatbot-for-messengers/dist/llm_chatbot_for_messengers*.whl .
 RUN pip install llm_chatbot_for_messengers*.whl
 
+ENV OPENAI_API_KEY "<<YOUR OPENAI API KEY>>"
+# If you want to trace agent by LANGSMITH, change to true.
+ENV LANGCHAIN_TRACING_V2 "false"
+ENV LANGCHAIN_API_KEY "<<YOUR LANGSMITH API KEY>>"
+ENV LANGCHAIN_PROJECT "<<YOUR LANGSMITH PROJECT NAME>>"
 EXPOSE 8000
 ENTRYPOINT [ "kakao_chatbot" ]

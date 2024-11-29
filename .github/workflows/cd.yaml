@@ -8,25 +8,64 @@ on:
     branches:
       - main
       - develop
+  push:
+    branches:
+      - feat/deploy-to-aci
 env:
   IMAGE_NAME: llm-chatbot-for-messengers
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
-        steps:
-        - uses: actions/checkout@v4.2.2
-        - name: 'Login via Azure CLI'
-          uses: azure/login@v2.2.0
-          with:
-            creds: ${{ secrets.AZURE_CREDENTIALS }}
+  delivery:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: "Login via Azure CLI"
+        uses: azure/login@v2.2.0
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-        - name: 'Build and push image'
-          uses: azure/docker-login@v2
-          with:
-            login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-            username: ${{ secrets.REGISTRY_USERNAME }}
-            password: ${{ secrets.REGISTRY_PASSWORD }}
-        - run: |
-            docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} .
-            docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+      - name: "Build and push image"
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} .
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs:
+      - delivery
+    steps:
+      - name: "Login via Azure CLI"
+        uses: azure/login@v2.2.0
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Find Container App Name
+        id: find-container-app-name
+        run: |
+          if [ ${{ github.ref_name }} -eq "develop" ]; then
+            CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-dev
+          elif [ ${{ github.ref_name }} -eq "prod" ]; then
+            CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-prod
+          elif [ ${{ github.ref_name }} -eq "feat/deploy-to-aci" ]; then
+            CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-test
+          else
+            echo "Invalid branch: ${{ github.ref }}"
+            exit 1;
+          fi
+          echo CONTAINER_APP_NAME=$CONTAINER_APP_NAME >> $GITHUB_OUTPUT
+      - name: Deploy image to container app
+        env:
+          CONTAINER_APP_NAME: ${{ steps.find-container-app-name.outputs.CONTAINER_APP_NAME }}
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          acrName: ${{ secrets.REGISTRY_NAME }}
+          containerAppName: ${{ env.CONTAINER_APP_NAME }}
+          resourceGroup: ${{ secrets.RESOURCE_GROUP }}
+          imageToDeploy: ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          location: ${{ secrets.CONTAINER_APP_LOCATION }}
+          targetPort: 8000
+          environmentVariables: ${{ secrets.CONTAINER_APP_ENV }}
