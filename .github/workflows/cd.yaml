@@ -14,7 +14,7 @@ on:
 env:
   IMAGE_NAME: llm-chatbot-for-messengers
   # TAG: ${{ github.ref_name }}
-  TAG: test
+  TAG: develop
 jobs:
   # delivery:
   #   runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
           elif [ ${{ github.ref_name }} = "prod" ]; then
             CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-prod
           elif [ ${{ github.ref_name }} = "feat/deploy-to-aci" ]; then
-            CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-test
+            CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-dev
           else
             echo "Invalid branch: ${{ github.ref }}"
             exit 1;
