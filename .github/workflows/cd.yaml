@@ -8,24 +8,19 @@ on:
     branches:
       - main
       - develop
-  push:
-    branches:
-      - feat/deploy-to-aci
 env:
   IMAGE_NAME: llm-chatbot-for-messengers
-  # TAG: ${{ github.ref_name }}
-  TAG: develop
+  TAG: ${{ github.ref_name }}
 jobs:
   delivery:
     runs-on: ubuntu-latest
-    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4.2.2
       - name: "Login via Azure CLI"
         uses: azure/login@v2.2.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: "Build and push image"
         uses: azure/docker-login@v2
         with:
@@ -52,9 +47,8 @@ jobs:
           elif [ ${{ github.ref_name }} = "prod" ]; then
             CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-prod
           else
-            CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-dev
-            # echo "Invalid branch: ${{ github.ref }}"
-            # exit 1;
+            echo "Invalid branch: ${{ github.ref }}"
+            exit 1;
           fi
           echo CONTAINER_APP_NAME=$CONTAINER_APP_NAME >> $GITHUB_OUTPUT
       - name: Deploy image to container app
