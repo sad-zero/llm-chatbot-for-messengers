@@ -69,4 +69,4 @@ jobs:
           imageToDeploy: ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
           location: ${{ secrets.CONTAINER_APP_LOCATION }}
           targetPort: 8000
-          environmentVariables: ${{ secrets.CONTAINER_APP_ENV }}
+          environmentVariables: "${{ secrets.CONTAINER_APP_ENV }}"
