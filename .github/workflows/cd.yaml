@@ -16,30 +16,29 @@ env:
   # TAG: ${{ github.ref_name }}
   TAG: test
 jobs:
-  delivery:
-    runs-on: ubuntu-latest
-    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    steps:
-      - uses: actions/checkout@v4.2.2
-      - name: "Login via Azure CLI"
-        uses: azure/login@v2.2.0
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+  # delivery:
+  #   runs-on: ubuntu-latest
+  #   # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  #   steps:
+  #     - uses: actions/checkout@v4.2.2
+  #     - name: "Login via Azure CLI"
+  #       uses: azure/login@v2.2.0
+  #       with:
+  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: "Build and push image"
-        uses: azure/docker-login@v2
-        with:
-          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-      - run: |
-          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }} .
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
+  #     - name: "Build and push image"
+  #       uses: azure/docker-login@v2
+  #       with:
+  #         login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+  #         username: ${{ secrets.REGISTRY_USERNAME }}
+  #         password: ${{ secrets.REGISTRY_PASSWORD }}
+  #     - run: |
+  #         docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }} .
+  #         docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    needs:
-      - delivery
+    # needs:
+    #   - delivery
     steps:
       - name: "Login via Azure CLI"
         uses: azure/login@v2.2.0
