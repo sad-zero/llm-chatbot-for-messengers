@@ -47,11 +47,11 @@ jobs:
       - name: Find Container App Name
         id: find-container-app-name
         run: |
-          if [ ${{ github.ref_name }} -eq "develop" ]; then
+          if [ ${{ github.ref_name }} = "develop" ]; then
             CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-dev
-          elif [ ${{ github.ref_name }} -eq "prod" ]; then
+          elif [ ${{ github.ref_name }} = "prod" ]; then
             CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-prod
-          elif [ ${{ github.ref_name }} -eq "feat/deploy-to-aci" ]; then
+          elif [ ${{ github.ref_name }} = "feat/deploy-to-aci" ]; then
             CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-test
           else
             echo "Invalid branch: ${{ github.ref }}"
