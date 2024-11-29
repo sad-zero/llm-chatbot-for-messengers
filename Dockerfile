@@ -13,6 +13,7 @@ RUN hatch run builder:build-wheel
 FROM python:3.11-slim AS runner
 WORKDIR /llm-chatbot-for-messengers
 COPY --from=builder /llm-chatbot-for-messengers/dist/llm_chatbot_for_messengers*.whl .
+COPY --from=builder /llm-chatbot-for-messengers/src/resources src/resources
 RUN pip install llm_chatbot_for_messengers*.whl
 
 ENV OPENAI_API_KEY "<<YOUR OPENAI API KEY>>"
