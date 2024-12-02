@@ -119,6 +119,36 @@ UV_PROJECT_ENVIRONMENT = ".venv/types"
 check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
 [tool.mypy]
 
+[tool.hatch.envs.linter]
+detached = true
+
+dependencies = [
+  "sqlfluff>=3.2, <3.3"
+]
+
+[tool.hatch.envs.linter.scripts]
+fix-sql = "sqlfluff fix ./scripts && sqlfluff lint ./scripts"
+fix-code = "hatch fmt"
+
+[tool.sqlfluff.core]
+dialect = "postgres"
+templater = "jinja"
+sql_file_exts = ".sql,.sql.j2,.dml,.ddl"
+
+[tool.sqlfluff.indentation]
+indented_joins = false
+indented_using_on = true
+template_blocks_indent = false
+
+[tool.sqlfluff.templater]
+unwrap_wrapped_queries = true
+
+[tool.sqlfluff.templater.jinja]
+apply_dbt_builtins = true
+
+[tool.sqlfluff.rules.capitalisation.keywords]
+capitalisation_policy = "upper"
+
 [tool.hatch.envs.builder.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/builder"
 
