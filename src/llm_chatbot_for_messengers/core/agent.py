@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Self, cast
 
 from langchain_openai import ChatOpenAI
 from pydantic import AfterValidator, BaseModel, Field
@@ -26,12 +26,20 @@ from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflo
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
 
-    from llm_chatbot_for_messengers.core.workflow import Workflow
+    from llm_chatbot_for_messengers.core.custom_langgraph import Workflow
 
 logger = logging.getLogger(__name__)
 
 
 class QAAgent(ABC):
+    __instance: Self | None = None
+
+    @classmethod
+    def get_instance(cls, *args, **kwargs) -> Self:
+        if cls.__instance is None:
+            cls.__instance = cls(*args, **kwargs)
+        return cls.__instance
+
     async def ask(self, user: User, question: str, timeout: int | None = None) -> str:
         """Ask question
 
@@ -85,9 +93,7 @@ class QAAgentImpl(BaseModel, QAAgent):
 
     @override
     async def _ask(self, user: User, question: str) -> str:
-        initial: QAState = {
-            'question': question,
-        }
+        initial: QAState = QAState.put_question(question=question)
         response: QAState = await self.workflow.ainvoke(
             initial,
             config={
@@ -97,9 +103,10 @@ class QAAgentImpl(BaseModel, QAAgent):
                         mode='python',
                     )
                 },
+                'configurable': {'thread_id': user.user_id.user_id},
             },
         )  # type: ignore
-        result: str = response['answer']
+        result: str = cast(str, response.answer)
         return result
 
     @override
@@ -113,7 +120,7 @@ class QAAgentImpl(BaseModel, QAAgent):
         return self.fallback_message
 
     @cached_property
-    def workflow(self) -> Workflow:
+    def workflow(self) -> Workflow[QAState]:
         answer_node_config: WorkflowNodeConfig = self.workflow_configs['answer_node']
         answer_node_llm: BaseChatModel | None = None
         if answer_node_config.llm_config is not None:

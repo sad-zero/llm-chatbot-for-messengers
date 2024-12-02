@@ -10,7 +10,7 @@ def get_qa_agent() -> Generator[QAAgent, None, None]:
         QAAgent: Fully initialized instance
     """
     try:
-        agent = QAAgentImpl(
+        agent = QAAgentImpl.get_instance(
             workflow_configs={
                 'answer_node': WorkflowNodeConfig(
                     node_name='answer_node',
