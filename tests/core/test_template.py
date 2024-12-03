@@ -3,7 +3,7 @@ from typing import Literal
 
 import pytest
 from langchain.prompts import BasePromptTemplate
-from llm_chatbot_for_messengers.core.template import get_template
+from llm_chatbot_for_messengers.core.output.template import get_template
 
 
 @pytest.mark.parametrize(

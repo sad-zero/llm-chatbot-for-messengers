@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from llm_chatbot_for_messengers.core.agent import QAAgentImpl
-from llm_chatbot_for_messengers.core.user import User
+from llm_chatbot_for_messengers.core.entity.agent import QAAgentImpl
+from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.vo import LLMConfig, UserId, WorkflowNodeConfig
 
 

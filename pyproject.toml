@@ -21,6 +21,7 @@ dependencies = [
   "langchain-community>=0.3, <0.4",
   "langchain-openai>=0.2, <0.3",
   "langgraph>=0.2, <0.3",
+  "langgraph-checkpoint-postgres>=2.0, <2.1",
   "pydantic>=2.9, <3.0",
   "uvicorn[standard]==0.32.0",
   "fastapi==0.115.5",
@@ -93,6 +94,7 @@ extra-dependencies = [
   "pytest-asyncio>=0.24",
   "pre-commit >= 4.0",
   "wheel",
+  "ipython",
 ]
 
 [tool.hatch.envs.dev.env-vars]

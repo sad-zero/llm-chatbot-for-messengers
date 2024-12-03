@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 
 from llm_chatbot_for_messengers.core.custom_langgraph import PydanticStateGraph, Workflow
-from llm_chatbot_for_messengers.core.template import get_template
+from llm_chatbot_for_messengers.core.output.template import get_template
 from llm_chatbot_for_messengers.core.vo import AnswerNodeResponse, QAState
 
 if TYPE_CHECKING:

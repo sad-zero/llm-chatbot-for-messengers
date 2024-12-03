@@ -13,13 +13,13 @@ from langchain_openai import ChatOpenAI
 from pydantic import AfterValidator, BaseModel, Field
 from typing_extensions import override
 
+from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.error import SpecificationError
 from llm_chatbot_for_messengers.core.specification import (
     check_necessary_nodes,
     check_timeout,
     check_workflow_configs,
 )
-from llm_chatbot_for_messengers.core.user import User
 from llm_chatbot_for_messengers.core.vo import LLMConfig, LLMProvider, QAState, WorkflowNodeConfig
 from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflow
 

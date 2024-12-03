@@ -1,6 +1,6 @@
 from typing import Generator
 
-from llm_chatbot_for_messengers.core.agent import QAAgent, QAAgentImpl
+from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowNodeConfig
 
 

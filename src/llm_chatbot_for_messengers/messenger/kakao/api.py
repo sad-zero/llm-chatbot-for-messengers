@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI
 
-from llm_chatbot_for_messengers.core.agent import QAAgent
+from llm_chatbot_for_messengers.core.entity.agent import QAAgent
 from llm_chatbot_for_messengers.messenger.kakao.container import get_qa_agent
 from llm_chatbot_for_messengers.messenger.kakao.vo import ChatRequest, ChatResponse, ChatTemplate, SimpleTextOutput
 
