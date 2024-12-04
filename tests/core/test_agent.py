@@ -3,32 +3,54 @@ from __future__ import annotations
 import pytest
 from llm_chatbot_for_messengers.core.entity.agent import QAAgentImpl
 from llm_chatbot_for_messengers.core.entity.user import User
-from llm_chatbot_for_messengers.core.vo import LLMConfig, UserId, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
+from llm_chatbot_for_messengers.core.vo import LLMConfig, UserId, WorkflowGlobalConfig, WorkflowNodeConfig
 
 
 @pytest.mark.parametrize(
-    ('workflow_configs', 'fallback_message', 'expected'),
+    ('workflow_configs', 'global_configs', 'expected'),
     [
-        ({'answer_node': WorkflowNodeConfig(node_name='answer_node')}, 'Fallback message', 'ok'),
-        ({'invalid_node': WorkflowNodeConfig(node_name='answer_node')}, 'Fallback message', 'error'),
-        ({'answer_node': WorkflowNodeConfig(node_name='invalid_node')}, 'Fallback message', 'error'),
+        (
+            {'answer_node': WorkflowNodeConfig(node_name='answer_node')},
+            WorkflowGlobalConfig(fallback_message='Fallback message'),
+            'ok',
+        ),
+        (
+            {'answer_node': WorkflowNodeConfig(node_name='answer_node')},
+            WorkflowGlobalConfig(fallback_message='Fallback message', memory_manager=VolatileMemoryManager()),
+            'ok',
+        ),
+        (
+            {'invalid_node': WorkflowNodeConfig(node_name='answer_node')},
+            WorkflowGlobalConfig(fallback_message='Fallback message'),
+            'error',
+        ),
+        (
+            {'answer_node': WorkflowNodeConfig(node_name='invalid_node')},
+            WorkflowGlobalConfig(fallback_message='Fallback message'),
+            'error',
+        ),
     ],
 )
-def test_create_qa_agent(workflow_configs: dict[str, WorkflowNodeConfig], fallback_message: str, expected: str):
+def test_create_qa_agent(
+    workflow_configs: dict[str, WorkflowNodeConfig], global_configs: WorkflowGlobalConfig, expected: str
+):
     # when
     if expected == 'ok':
         # then
-        assert QAAgentImpl(workflow_configs=workflow_configs, fallback_message=fallback_message) is not None
+        assert QAAgentImpl(workflow_configs=workflow_configs, global_configs=global_configs) is not None
     else:
         # then
         with pytest.raises(RuntimeError):
-            QAAgentImpl(workflow_configs=workflow_configs, fallback_message=fallback_message)
+            QAAgentImpl(workflow_configs=workflow_configs, global_configs=global_configs)
 
 
 def test_qa_agent_cached_workflow():
     # given
     workflow_configs = {'answer_node': WorkflowNodeConfig(node_name='answer_node', llm_config=LLMConfig())}
-    agent = QAAgentImpl(workflow_configs=workflow_configs, fallback_message='Fallback message')
+    agent = QAAgentImpl(
+        workflow_configs=workflow_configs, global_configs=WorkflowGlobalConfig(fallback_message='Fallback message')
+    )
     # when
     workflow1 = agent.workflow
     workflow2 = agent.workflow

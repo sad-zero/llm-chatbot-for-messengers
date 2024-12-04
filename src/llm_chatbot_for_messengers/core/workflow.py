@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
 
 from llm_chatbot_for_messengers.core.custom_langgraph import PydanticStateGraph, Workflow
 from llm_chatbot_for_messengers.core.output.template import get_template
@@ -14,6 +13,8 @@ from llm_chatbot_for_messengers.core.vo import AnswerNodeResponse, QAState
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
+
+    from llm_chatbot_for_messengers.core.output.memory import MemoryType
 
 
 async def answer_node(state: QAState, llm: BaseChatModel, template_name: str | None = None) -> QAState:
@@ -57,12 +58,15 @@ async def answer_node(state: QAState, llm: BaseChatModel, template_name: str | N
 
 
 def get_question_answer_workflow(
-    answer_node_llm: BaseChatModel | None = None, answer_node_template_name: str | None = None
+    answer_node_llm: BaseChatModel | None = None,
+    answer_node_template_name: str | None = None,
+    memory: MemoryType | None = None,
 ) -> Workflow[QAState]:
     """
     Args:
         answer_node_llm (BaseChatModel | None): LLM for answer node
         answer_node_template_name (str | None): Prompt template for answer node
+        memory_type               (str | None): Memory Type
     Returns:
         Workflow: Question Answer Workflow
     """
@@ -73,5 +77,4 @@ def get_question_answer_workflow(
     builder.add_node('answer_node', answer_node_with_llm)
     builder.set_entry_point('answer_node')
     builder.set_finish_point('answer_node')
-    memory = MemorySaver()
     return builder.compile(checkpointer=memory)

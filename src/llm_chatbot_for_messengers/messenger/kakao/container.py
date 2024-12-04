@@ -1,7 +1,8 @@
 from typing import Generator
 
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
-from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
+from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowGlobalConfig, WorkflowNodeConfig
 
 
 def get_qa_agent() -> Generator[QAAgent, None, None]:
@@ -18,7 +19,9 @@ def get_qa_agent() -> Generator[QAAgent, None, None]:
                     llm_config=LLMConfig(model='gpt-4o-2024-08-06', temperature=0.52, max_tokens=200),
                 )
             },
-            fallback_message='미안해용. ㅠㅠ 질문이 너무 어려워용..',
+            global_configs=WorkflowGlobalConfig(
+                fallback_message='미안해용. ㅠㅠ 질문이 너무 어려워용..', memory_manager=VolatileMemoryManager()
+            ),
         )
         yield agent
     finally:

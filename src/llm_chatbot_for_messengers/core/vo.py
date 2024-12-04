@@ -9,6 +9,8 @@ from langchain_core.messages import AnyMessage  # noqa: TCH002
 from langgraph.graph import add_messages  # noqa: TCH002
 from pydantic import BaseModel, Field, model_validator
 
+from llm_chatbot_for_messengers.core.output.memory import MemoryManager  # noqa: TCH001
+
 
 class UserId(BaseModel):
     user_seq: int | None = Field(description="User's sequence", default=None)
@@ -87,6 +89,17 @@ class WorkflowNodeConfig(BaseModel):
     node_name: str = Field(description='Workflow node name')
     template_name: str | None = Field(description='Workflow node prompt template name', default=None)
     llm_config: LLMConfig | None = Field(description="Workflow node's LLM Config", default=None)
+
+
+class WorkflowGlobalConfig(BaseModel):
+    fallback_message: str = Field(description='Fallback message is returned when normal flows fail')
+
+    memory_manager: MemoryManager | None = Field(
+        description='Manager that control memories. None means stateless.', default=None
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class AnswerNodeResponse(BaseModel):

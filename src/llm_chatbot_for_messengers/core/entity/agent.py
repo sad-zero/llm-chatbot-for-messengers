@@ -20,13 +20,14 @@ from llm_chatbot_for_messengers.core.specification import (
     check_timeout,
     check_workflow_configs,
 )
-from llm_chatbot_for_messengers.core.vo import LLMConfig, LLMProvider, QAState, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.vo import LLMConfig, LLMProvider, QAState, WorkflowGlobalConfig, WorkflowNodeConfig
 from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflow
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
 
     from llm_chatbot_for_messengers.core.custom_langgraph import Workflow
+    from llm_chatbot_for_messengers.core.output.memory import MemoryType
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ class QAAgentImpl(BaseModel, QAAgent):
         AfterValidator(check_workflow_configs),
         AfterValidator(check_necessary_nodes('answer_node')),
     ] = Field(description='Key equals to WorkflowNodeConfig.node_name')
-    fallback_message: str = Field(description='Fallback message is returned when normal flows fail')
+    global_configs: WorkflowGlobalConfig = Field(description='Global configuration.')
 
     @override
     async def _ask(self, user: User, question: str) -> str:
@@ -117,7 +118,7 @@ class QAAgentImpl(BaseModel, QAAgent):
         }
         log_msg: str = f'fallback: {log_info}'
         logger.warning(log_msg)
-        return self.fallback_message
+        return self.global_configs.fallback_message
 
     @cached_property
     def workflow(self) -> Workflow[QAState]:
@@ -125,8 +126,13 @@ class QAAgentImpl(BaseModel, QAAgent):
         answer_node_llm: BaseChatModel | None = None
         if answer_node_config.llm_config is not None:
             answer_node_llm = self.__build_llm(llm_config=answer_node_config.llm_config)
+        memory: MemoryType | None = None
+        if self.global_configs.memory_manager is not None:
+            memory = self.global_configs.memory_manager.get_memory()
         return get_question_answer_workflow(
-            answer_node_llm=answer_node_llm, answer_node_template_name=answer_node_config.template_name
+            answer_node_llm=answer_node_llm,
+            answer_node_template_name=answer_node_config.template_name,
+            memory=memory,
         )
 
     @staticmethod
