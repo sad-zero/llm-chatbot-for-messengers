@@ -26,6 +26,7 @@ dependencies = [
   "uvicorn[standard]==0.32.0",
   "fastapi==0.115.5",
   "PyYAML>=6.0, <6.1",
+  "dependency-injector>=4.43, <4.44",
 ]
 
 [project.scripts]
