@@ -43,7 +43,9 @@ extra-dependencies = ["pytest-asyncio>=0.24"]
 
 [tool.hatch.envs.hatch-test.env-vars]
 OPENAI_API_KEY = "{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+
 PROMPT_DIR = "tests/resources/prompt"
+CORE_DB_URI = "postgresql://postgres:happy@0.0.0.0:15432/llm_chatbot_for_messengers"
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.feature.platforms = [{ value = "macos" }]
@@ -85,6 +87,7 @@ LANGCHAIN_API_KEY = "{env:LANGCHAIN_API_KEY:<<YOUR LANGSMITH API KEY>>}"
 LANGCHAIN_PROJECT = "{env:LANGCHAIN_PROJECT:<<YOUR LANGSMITH PROJECT NAME>>}"
 
 PROMPT_DIR = "src/resources/prompt"
+CORE_DB_URI = "{env:CORE_DB_URI:<<YOUR postgresql DB URI>>"
 
 [tool.hatch.envs.default.scripts]
 pip = "$HATCH_UV pip {args}"
@@ -100,7 +103,9 @@ extra-dependencies = [
 
 [tool.hatch.envs.dev.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/dev"
+
 PROMPT_DIR = "src/resources/prompt"
+CORE_DB_URI = "postgresql://postgres:happy@0.0.0.0:15432/llm_chatbot_for_messengers"
 
 [tool.hatch.envs.dev.scripts]
 install_precommit = "pre-commit install"
