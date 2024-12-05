@@ -153,6 +153,26 @@ wheels = [
 ]
 
 [[package]]
+name = "dependency-injector"
+version = "4.43.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dd/12/b56bf869ee465dc46e97636766a85c8f056f87dfbdb753c1cd8a488bb357/dependency_injector-4.43.0.tar.gz", hash = "sha256:d0774234cc4d5c860fa971912182131b45f41ebabd9e3fc2ce80f4b1d05de057", size = 1113152 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0a/e9/9b0eb39c736504e80e054af2659492ff263f8fd7310f479ea0f2ff8426c1/dependency_injector-4.43.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4f3b2c1d3a4c75772854ef7b47d725e6e894b9e3590bf13bf19e3bac4935ed88", size = 728133 },
+    { url = "https://files.pythonhosted.org/packages/f6/04/8d8de8ab3a42a8acd8c275fcc20b20f8c6dfb0552798853958aec1ef3427/dependency_injector-4.43.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:39f46a2fe7ddfea96d18521c5c0f265ca3f177060f0ccb4505f9a638c3429b49", size = 4743905 },
+    { url = "https://files.pythonhosted.org/packages/c3/38/c86c7eba8ad881d77f26ec5e3efeacf62bfea6d5dad2ceba76ffa1a040cc/dependency_injector-4.43.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:64c46dd2dd5543554e3ffe05c935fdb4e8a805a162e56c7c7519acefdd374ff0", size = 4797527 },
+    { url = "https://files.pythonhosted.org/packages/dd/9d/59339f30f14063b7acf981a14e014fbbab02ef53805e2670a44fc50005b4/dependency_injector-4.43.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3252b32935df3c5f34a4da83d43a38838e0f48d54e47405fcda5e59a2ec4a930", size = 4460953 },
+    { url = "https://files.pythonhosted.org/packages/9e/89/1c738da3423756f7fbd2de9d323213ee2d59087a43600a8cb48ee73d93a1/dependency_injector-4.43.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:200c0286c88c9cb521050eb56e6465f50c289cb145b5308d9d8d79b0b4bac4b6", size = 4428256 },
+    { url = "https://files.pythonhosted.org/packages/45/96/856e0fd7e84323ebf950f2dbd8a0a60a5121e5f61f410a0f00a1021e75fd/dependency_injector-4.43.0-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:0791c72a89c4a59c3120b659c3b3e8fbb82e85d4732ffdb8548e395f19425e73", size = 4368421 },
+    { url = "https://files.pythonhosted.org/packages/1d/fa/b1eb61542a4292a9034682ef7e9d753b0a13e8abe4d983ec85ca28732f8c/dependency_injector-4.43.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:5fb045e5db6078da309889fc1447cd89b8bd1c810853b436773f895eae477b3b", size = 4595104 },
+    { url = "https://files.pythonhosted.org/packages/b9/24/11aaca70f505fb9b2a8462f816dd37f3a3391d4298716907b5875e4fa265/dependency_injector-4.43.0-cp311-cp311-win32.whl", hash = "sha256:d24ebaa219edf95a6dc4559053bb8e295dfdee396478488382fdaa078de57d92", size = 540135 },
+    { url = "https://files.pythonhosted.org/packages/4c/99/8fa68fa5768e864974af3403ca6b571db893e9a55847daeda53695901c7e/dependency_injector-4.43.0-cp311-cp311-win_amd64.whl", hash = "sha256:230a6ae585a18845bea4001688badd3c2b7f373bcac5c6e659b14e1e1b6e03f2", size = 666663 },
+]
+
+[[package]]
 name = "distro"
 version = "1.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -432,15 +452,30 @@ wheels = [
 
 [[package]]
 name = "langgraph-checkpoint"
-version = "2.0.6"
+version = "2.0.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "langchain-core" },
     { name = "msgpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/cf/15d080aeb50450a41639cfe68d28688a892e2d5abb3994dcd957d3fdeee0/langgraph_checkpoint-2.0.6.tar.gz", hash = "sha256:69ab9c61c4e2992264671f55579c24070b7b6cedc105a33da3fba6526df248cf", size = 21912 }
+sdist = { url = "https://files.pythonhosted.org/packages/dc/29/c42d7c8085150d1081f85ff780e2583935045938e10d04b06ffa7bf598b7/langgraph_checkpoint-2.0.8.tar.gz", hash = "sha256:897c21d677d62946481334b3b37e8ae25f6b7fd474f3bc4ee3715ec5fd5f6055", size = 31232 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/27/be35ef125967513bff810afb3ed7da6cc62c429b90ddff1fc188f649710f/langgraph_checkpoint-2.0.6-py3-none-any.whl", hash = "sha256:2878283c3ee2519bf180df9b7b7155b73fa05eb63b1af9600a03e03a930d8c53", size = 25131 },
+    { url = "https://files.pythonhosted.org/packages/65/6e/9dd5535f4ae370d8fea291ff67baad13c575eb770b47f7397525de4aa6dc/langgraph_checkpoint-2.0.8-py3-none-any.whl", hash = "sha256:c65243e0d759ca6f556d01fc0039c545fdc8c6917214e750c9ecf8a7bc78bec6", size = 35285 },
+]
+
+[[package]]
+name = "langgraph-checkpoint-postgres"
+version = "2.0.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langgraph-checkpoint" },
+    { name = "orjson" },
+    { name = "psycopg" },
+    { name = "psycopg-pool" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/92/bd/8a6486736577681a1ea15ae7f61888077500b72601cebf6a3bce76cce5bb/langgraph_checkpoint_postgres-2.0.7.tar.gz", hash = "sha256:924ed0337f08726109be0aeadc6fff8d3ea287fc7ae1dd8fbac42186060d815e", size = 22012 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/70/22/03e92d9a793dd2b06ef0a1367f975f2a82e5c25cf11f924ee050991716f6/langgraph_checkpoint_postgres-2.0.7-py3-none-any.whl", hash = "sha256:73ec1bd73d3e22ecfa8de48f40b2faa6ded30e67dd3ba8b4b4ba6d5057fe9c56", size = 28007 },
 ]
 
 [[package]]
@@ -478,11 +513,13 @@ name = "llm-chatbot-for-messengers"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "dependency-injector" },
     { name = "fastapi" },
     { name = "langchain" },
     { name = "langchain-community" },
     { name = "langchain-openai" },
     { name = "langgraph" },
+    { name = "langgraph-checkpoint-postgres" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "uvicorn", extra = ["standard"] },
@@ -490,11 +527,13 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "dependency-injector", specifier = ">=4.43,<4.44" },
     { name = "fastapi", specifier = "==0.115.5" },
     { name = "langchain", specifier = ">=0.3,<0.4" },
     { name = "langchain-community", specifier = ">=0.3,<0.4" },
     { name = "langchain-openai", specifier = ">=0.2,<0.3" },
     { name = "langgraph", specifier = ">=0.2,<0.3" },
+    { name = "langgraph-checkpoint-postgres", specifier = ">=2.0,<2.1" },
     { name = "pydantic", specifier = ">=2.9,<3.0" },
     { name = "pyyaml", specifier = ">=6.0,<6.1" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.32.0" },
@@ -655,6 +694,31 @@ wheels = [
 ]
 
 [[package]]
+name = "psycopg"
+version = "3.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/ad/7ce016ae63e231575df0498d2395d15f005f05e32d3a2d439038e1bd0851/psycopg-3.2.3.tar.gz", hash = "sha256:a5764f67c27bec8bfac85764d23c534af2c27b893550377e37ce59c12aac47a2", size = 155550 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ce/21/534b8f5bd9734b7a2fcd3a16b1ee82ef6cad81a4796e95ebf4e0c6a24119/psycopg-3.2.3-py3-none-any.whl", hash = "sha256:644d3973fe26908c73d4be746074f6e5224b03c1101d302d9a53bf565ad64907", size = 197934 },
+]
+
+[[package]]
+name = "psycopg-pool"
+version = "3.2.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/49/71/01d4e589dc5fd1f21368b7d2df183ed0e5bbc160ce291d745142b229797b/psycopg_pool-3.2.4.tar.gz", hash = "sha256:61774b5bbf23e8d22bedc7504707135aaf744679f8ef9b3fe29942920746a6ed", size = 29749 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bb/28/2b56ac94c236ee033c7b291bcaa6a83089d0cc0fe7830c35f6521177c199/psycopg_pool-3.2.4-py3-none-any.whl", hash = "sha256:f6a22cff0f21f06d72fb2f5cb48c618946777c49385358e0c88d062c59cbd224", size = 38240 },
+]
+
+[[package]]
 name = "pydantic"
 version = "2.10.1"
 source = { registry = "https://pypi.org/simple" }
@@ -783,6 +847,15 @@ wheels = [
 ]
 
 [[package]]
+name = "six"
+version = "1.16.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926", size = 34041 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254", size = 11053 },
+]
+
+[[package]]
 name = "sniffio"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -883,6 +956,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/dc/74/1789779d91f1961fa9438e9a8710cdae6bd138c80d7303996933d117264a/typing_inspect-0.9.0.tar.gz", hash = "sha256:b23fc42ff6f6ef6954e4852c1fb512cdd18dbea03134f91f856a95ccc9461f78", size = 13825 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/65/f3/107a22063bf27bdccf2024833d3445f4eea42b2e598abfbd46f6a63b6cb0/typing_inspect-0.9.0-py3-none-any.whl", hash = "sha256:9ee6fc59062311ef8547596ab6b955e1b8aa46242d854bfc78f4f6b0eff35f9f", size = 8827 },
+]
+
+[[package]]
+name = "tzdata"
+version = "2024.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e1/34/943888654477a574a86a98e9896bae89c7aa15078ec29f490fef2f1e5384/tzdata-2024.2.tar.gz", hash = "sha256:7d85cc416e9382e69095b7bdf4afd9e3880418a2413feec7069d533d6b4e31cc", size = 193282 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/ab/7e5f53c3b9d14972843a647d8d7a853969a58aecc7559cb3267302c94774/tzdata-2024.2-py2.py3-none-any.whl", hash = "sha256:a48093786cdcde33cad18c2555e8532f34422074448fbc874186f0abd79565cd", size = 346586 },
 ]
 
 [[package]]
