@@ -20,6 +20,7 @@ async def test_volatile_memory():
     await manager.release_memory()
 
 
+@pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason='Database cannot be established in git action.')
 @pytest.mark.asyncio
 async def test_persistent_memory():
     # given
