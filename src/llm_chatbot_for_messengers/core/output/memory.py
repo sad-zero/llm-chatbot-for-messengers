@@ -63,7 +63,7 @@ class VolatileMemoryManager(MemoryManager):
         # Release memory
 
 
-class PersistantMemoryManager(MemoryManager, BaseModel):
+class PersistentMemoryManager(MemoryManager, BaseModel):
     """Store persistantly"""
 
     conn_uri: Annotated[str, AfterValidator(lambda uri: uri.startswith('postgresql://') and uri)] = Field(

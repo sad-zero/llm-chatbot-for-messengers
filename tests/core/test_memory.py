@@ -4,7 +4,7 @@ import pytest
 from llm_chatbot_for_messengers.core.output.memory import (
     MemoryManager,
     MemoryType,
-    PersistantMemoryManager,
+    PersistentMemoryManager,
     VolatileMemoryManager,
 )
 
@@ -21,9 +21,9 @@ async def test_volatile_memory():
 
 
 @pytest.mark.asyncio
-async def test_persistant_memory():
+async def test_persistent_memory():
     # given
-    manager: MemoryManager = PersistantMemoryManager(conn_uri=os.getenv('CORE_DB_URI'))  # type: ignore
+    manager: MemoryManager = PersistentMemoryManager(conn_uri=os.getenv('CORE_DB_URI'))  # type: ignore
     # when
     memory: MemoryType = await manager.acquire_memory()
     # then
