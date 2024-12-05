@@ -1,5 +1,8 @@
+from contextlib import asynccontextmanager
+
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
+from fastapi import FastAPI
 
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
@@ -7,7 +10,7 @@ from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowGlobalConfig, 
 
 
 class AgentContainer(containers.DeclarativeContainer):
-    qa_agent: providers.Singleton[QAAgent] = providers.Singleton(
+    qa_agent: providers.Singleton[QAAgent] = providers.ThreadSafeSingleton(
         QAAgentImpl,
         workflow_configs={
             'answer_node': WorkflowNodeConfig(
@@ -17,19 +20,37 @@ class AgentContainer(containers.DeclarativeContainer):
             )
         },
         global_configs=WorkflowGlobalConfig(
-            fallback_message='미안해용. ㅠㅠ 질문이 너무 어려워용..', memory_manager=VolatileMemoryManager()
+            fallback_message='미안해용. ㅠㅠ 질문이 너무 어려워용..',
+            memory_manager=VolatileMemoryManager(),
         ),
     )
 
 
-def init_containers():
+@asynccontextmanager
+async def manage_resources(app: FastAPI):  # noqa: ARG001
     agent_container = AgentContainer()
+    await _initialize(agent_container)
+    yield
+    await _release(agent_container)
+
+
+async def _initialize(agent_container: AgentContainer):
     agent_container.check_dependencies()
+    qa_agent = agent_container.qa_agent()
+    await qa_agent.initialize()
+
     agent_container.wire(
         modules=[
             'llm_chatbot_for_messengers.messenger.kakao.container',
         ]
     )
+
+
+async def _release(agent_container: AgentContainer):
+    qa_agent = agent_container.qa_agent()
+    await qa_agent.shutdown()
+    agent_container.unwire()
+    agent_container.reset_singletons()
 
 
 @inject

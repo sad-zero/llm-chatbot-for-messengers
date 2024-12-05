@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from llm_chatbot_for_messengers.core.custom_langgraph import Workflow
 from llm_chatbot_for_messengers.core.entity.agent import QAAgentImpl
 from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
@@ -45,16 +46,19 @@ def test_create_qa_agent(
             QAAgentImpl(workflow_configs=workflow_configs, global_configs=global_configs)
 
 
-def test_qa_agent_cached_workflow():
+@pytest.mark.asyncio
+async def test_qa_agent_cached_workflow():
     # given
     workflow_configs = {'answer_node': WorkflowNodeConfig(node_name='answer_node', llm_config=LLMConfig())}
     agent = QAAgentImpl(
         workflow_configs=workflow_configs, global_configs=WorkflowGlobalConfig(fallback_message='Fallback message')
     )
+    await agent.initialize()
     # when
     workflow1 = agent.workflow
     workflow2 = agent.workflow
     # then
+    assert isinstance(workflow1, Workflow)
     assert id(workflow1) == id(workflow2)
 
 

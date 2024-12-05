@@ -6,13 +6,13 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Self, cast
+from typing import TYPE_CHECKING, Annotated, cast
 
 from langchain_openai import ChatOpenAI
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
+from llm_chatbot_for_messengers.core.custom_langgraph import Workflow  # noqa: TCH001
 from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.error import SpecificationError
 from llm_chatbot_for_messengers.core.specification import (
@@ -26,20 +26,28 @@ from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflo
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
 
-    from llm_chatbot_for_messengers.core.custom_langgraph import Workflow
     from llm_chatbot_for_messengers.core.output.memory import MemoryType
+
 
 logger = logging.getLogger(__name__)
 
 
 class QAAgent(ABC):
-    __instance: Self | None = None
+    @abstractmethod
+    async def initialize(self) -> None:
+        """
+        Initialize the agent.
+        - Acquire memory
+        - etc
+        """
 
-    @classmethod
-    def get_instance(cls, *args, **kwargs) -> Self:
-        if cls.__instance is None:
-            cls.__instance = cls(*args, **kwargs)
-        return cls.__instance
+    @abstractmethod
+    async def shutdown(self) -> None:
+        """
+        Shutdown the agent.
+        - Release memory
+        - etc
+        """
 
     async def ask(self, user: User, question: str, timeout: int | None = None) -> str:
         """Ask question
@@ -91,6 +99,53 @@ class QAAgentImpl(BaseModel, QAAgent):
         AfterValidator(check_necessary_nodes('answer_node')),
     ] = Field(description='Key equals to WorkflowNodeConfig.node_name')
     global_configs: WorkflowGlobalConfig = Field(description='Global configuration.')
+    _workflow: Workflow[QAState] | None = PrivateAttr(default=None)
+
+    @override
+    async def initialize(self) -> None:
+        if self.global_configs.memory_manager is not None:
+            memory: MemoryType | None = await self.global_configs.memory_manager.acquire_memory()
+        else:
+            memory = None
+
+        answer_node_config: WorkflowNodeConfig = self.workflow_configs['answer_node']
+        answer_node_llm: BaseChatModel | None = None
+        if answer_node_config.llm_config is not None:
+            answer_node_llm = self.__build_llm(llm_config=answer_node_config.llm_config)
+
+        self._workflow = get_question_answer_workflow(
+            answer_node_llm=answer_node_llm,
+            answer_node_template_name=answer_node_config.template_name,
+            memory=memory,
+        )
+
+    @staticmethod
+    def __build_llm(llm_config: LLMConfig) -> BaseChatModel:
+        match llm_config.provider:
+            case LLMProvider.OPENAI:
+                model = ChatOpenAI(
+                    model=llm_config.model,
+                    temperature=llm_config.temperature,
+                    top_p=llm_config.top_p,
+                    max_tokens=llm_config.max_tokens,
+                    **llm_config.extra_configs,
+                )
+            case _:
+                err_msg: str = f'Cannot support {llm_config.provider} provider now.'
+                raise RuntimeError(err_msg)
+        return model
+
+    @property
+    def workflow(self) -> Workflow[QAState]:
+        if self._workflow is None:
+            err_msg: str = "Workflow isn't initialized."
+            raise ValueError(err_msg)
+        return self._workflow
+
+    @override
+    async def shutdown(self) -> None:
+        if self.global_configs.memory_manager is not None:
+            await self.global_configs.memory_manager.release_memory()
 
     @override
     async def _ask(self, user: User, question: str) -> str:
@@ -119,34 +174,3 @@ class QAAgentImpl(BaseModel, QAAgent):
         log_msg: str = f'fallback: {log_info}'
         logger.warning(log_msg)
         return self.global_configs.fallback_message
-
-    @cached_property
-    def workflow(self) -> Workflow[QAState]:
-        answer_node_config: WorkflowNodeConfig = self.workflow_configs['answer_node']
-        answer_node_llm: BaseChatModel | None = None
-        if answer_node_config.llm_config is not None:
-            answer_node_llm = self.__build_llm(llm_config=answer_node_config.llm_config)
-        memory: MemoryType | None = None
-        if self.global_configs.memory_manager is not None:
-            memory = self.global_configs.memory_manager.get_memory()
-        return get_question_answer_workflow(
-            answer_node_llm=answer_node_llm,
-            answer_node_template_name=answer_node_config.template_name,
-            memory=memory,
-        )
-
-    @staticmethod
-    def __build_llm(llm_config: LLMConfig) -> BaseChatModel:
-        match llm_config.provider:
-            case LLMProvider.OPENAI:
-                model = ChatOpenAI(
-                    model=llm_config.model,
-                    temperature=llm_config.temperature,
-                    top_p=llm_config.top_p,
-                    max_tokens=llm_config.max_tokens,
-                    **llm_config.extra_configs,
-                )
-            case _:
-                err_msg: str = f'Cannot support {llm_config.provider} provider now.'
-                raise RuntimeError(err_msg)
-        return model
