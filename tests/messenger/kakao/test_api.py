@@ -1,7 +1,10 @@
+from llm_chatbot_for_messengers.messenger.kakao.api import app
+from llm_chatbot_for_messengers.messenger.kakao.container import get_qa_agent
 from llm_chatbot_for_messengers.messenger.kakao.vo import ChatResponse
 
 
-def test_chat(client):
+def test_chat(client, fake_agent):
+    app.dependency_overrides[get_qa_agent] = lambda: fake_agent
     response = client.post(
         '/kakao/v1/chat',
         json={
@@ -19,8 +22,9 @@ def test_chat(client):
     assert ChatResponse(**response.json())
 
 
-def test_failed_chat(failed_client):
-    response = failed_client.post(
+def test_failed_chat(client, fake_agent_fallback):
+    app.dependency_overrides[get_qa_agent] = lambda: fake_agent_fallback
+    response = client.post(
         '/kakao/v1/chat',
         json={
             'userRequest': {

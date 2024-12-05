@@ -22,10 +22,15 @@ jobs:
           pipx ensurepath
           pipx install hatch
           hatch config set dirs.env.virtual .venv
-      - name: Check style
+      - name: Check type
         run: |
           hatch run types:check
-          hatch fmt
+      - name: Check code style
+        run: |
+          hatch run linter:fix-code
+      - name: Check sql style
+        run: |
+          hatch run linter:fix-sql
       - name: Sync style
         run: |
           is_changed=$(git status | grep "Changes not staged for commit") || true
@@ -36,7 +41,7 @@ jobs:
               git add .
               git commit -m "Sync style"
               git push origin ${{ github.ref_name}}
-              
+
           else
               echo "Already sync style"
           fi
@@ -86,7 +91,7 @@ jobs:
               else
                   echo "Update lockfile"
               fi
-              
+
               hatch run builder:update-lock
           fi
       - name: Sync dependencies

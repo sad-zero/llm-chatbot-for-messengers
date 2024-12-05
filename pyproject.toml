@@ -21,10 +21,12 @@ dependencies = [
   "langchain-community>=0.3, <0.4",
   "langchain-openai>=0.2, <0.3",
   "langgraph>=0.2, <0.3",
+  "langgraph-checkpoint-postgres>=2.0, <2.1",
   "pydantic>=2.9, <3.0",
   "uvicorn[standard]==0.32.0",
   "fastapi==0.115.5",
   "PyYAML>=6.0, <6.1",
+  "dependency-injector>=4.43, <4.44",
 ]
 
 [project.scripts]
@@ -41,7 +43,9 @@ extra-dependencies = ["pytest-asyncio>=0.24"]
 
 [tool.hatch.envs.hatch-test.env-vars]
 OPENAI_API_KEY = "{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+
 PROMPT_DIR = "tests/resources/prompt"
+CORE_DB_URI = "postgresql://postgres:happy@0.0.0.0:15432/llm_chatbot_for_messengers"
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.feature.platforms = [{ value = "macos" }]
@@ -83,6 +87,7 @@ LANGCHAIN_API_KEY = "{env:LANGCHAIN_API_KEY:<<YOUR LANGSMITH API KEY>>}"
 LANGCHAIN_PROJECT = "{env:LANGCHAIN_PROJECT:<<YOUR LANGSMITH PROJECT NAME>>}"
 
 PROMPT_DIR = "src/resources/prompt"
+CORE_DB_URI = "{env:CORE_DB_URI:<<YOUR postgresql DB URI>>"
 
 [tool.hatch.envs.default.scripts]
 pip = "$HATCH_UV pip {args}"
@@ -93,11 +98,14 @@ extra-dependencies = [
   "pytest-asyncio>=0.24",
   "pre-commit >= 4.0",
   "wheel",
+  "ipython",
 ]
 
 [tool.hatch.envs.dev.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/dev"
+
 PROMPT_DIR = "src/resources/prompt"
+CORE_DB_URI = "postgresql://postgres:happy@0.0.0.0:15432/llm_chatbot_for_messengers"
 
 [tool.hatch.envs.dev.scripts]
 install_precommit = "pre-commit install"
@@ -118,6 +126,36 @@ UV_PROJECT_ENVIRONMENT = ".venv/types"
 [tool.hatch.envs.types.scripts]
 check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
 [tool.mypy]
+
+[tool.hatch.envs.linter]
+detached = true
+
+dependencies = [
+  "sqlfluff>=3.2, <3.3"
+]
+
+[tool.hatch.envs.linter.scripts]
+fix-sql = "sqlfluff fix ./scripts && sqlfluff lint ./scripts"
+fix-code = "hatch fmt"
+
+[tool.sqlfluff.core]
+dialect = "postgres"
+templater = "jinja"
+sql_file_exts = ".sql,.sql.j2,.dml,.ddl"
+
+[tool.sqlfluff.indentation]
+indented_joins = false
+indented_using_on = true
+template_blocks_indent = false
+
+[tool.sqlfluff.templater]
+unwrap_wrapped_queries = true
+
+[tool.sqlfluff.templater.jinja]
+apply_dbt_builtins = true
+
+[tool.sqlfluff.rules.capitalisation.keywords]
+capitalisation_policy = "upper"
 
 [tool.hatch.envs.builder.env-vars]
 UV_PROJECT_ENVIRONMENT = ".venv/builder"

@@ -21,10 +21,11 @@ templates:
       assert "Stay focused and dedicated to your goals. Your consistent efforts will lead to outstanding achievements"
       ---
       # Here are the admissible **ACTIONs** by functions:
-      def ask(question: str) -> str:
+      def ask(question: str, chat_histories: list) -> str:
           """
           Args:
               question (str): The curious question.
+              chat_histories (list): Previous conversations
           Returns:
               Result        : Answer based on your character and rules.
           """
@@ -36,7 +37,8 @@ templates:
       ---
       # Now, human requests the action:
   - type: human
-    input_variables: [question]
+    input_variables: [question, messages]
     template: |
-      question: str = {question}
-      ask(question)
+      question: str = "{question}"
+      chat_histories: list = {messages}
+      ask(question, chat_histories)

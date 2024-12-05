@@ -1,0 +1,22 @@
+# Use postgres/example user/password credentials
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: happy
+      POSTGRES_DB: llm_chatbot_for_messengers
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - llm-chatbot-for-messengers-volume:/var/lib/postgresql/data
+    ports:
+      - 15432:5432
+    command:
+      - "-p 5432"
+      - "-h 0.0.0.0"
+volumes:
+  llm-chatbot-for-messengers-volume:

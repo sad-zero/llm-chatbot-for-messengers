@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from llm_chatbot_for_messengers.core.user import User
+from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.vo import UserId
 
 

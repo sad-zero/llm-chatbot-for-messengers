@@ -1,15 +1,23 @@
 import pytest
-from llm_chatbot_for_messengers.core.agent import QAAgent
+from llm_chatbot_for_messengers.core.entity.agent import QAAgent
+from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.error import SpecificationError
-from llm_chatbot_for_messengers.core.user import User
 from typing_extensions import override
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def fake_agent() -> QAAgent:
     """QAAgent with FakeLLM"""
 
     class FakeQAAgent(QAAgent):
+        @override
+        async def initialize(self):
+            pass
+
+        @override
+        async def shutdown(self):
+            pass
+
         @override
         async def _ask(self, user: User, question: str) -> str:
             answer: str = f"""
@@ -25,11 +33,19 @@ def fake_agent() -> QAAgent:
     return FakeQAAgent()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def fake_agent_fallback() -> QAAgent:
     """QAAgent with FakeLLM"""
 
     class FakeQAAgent(QAAgent):
+        @override
+        async def initialize(self):
+            pass
+
+        @override
+        async def shutdown(self):
+            pass
+
         @override
         async def _ask(self, user: User, question: str) -> str:
             raise SpecificationError

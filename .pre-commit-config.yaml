@@ -16,9 +16,15 @@ repos:
         verbose: true
         entry: hatch run types:check
         types: ["python"]
-    -   id: style-check
-        name: style-check
+    -   id: code-check
+        name: code-check
         language: system
         verbose: true
-        entry: hatch fmt
+        entry: hatch run linter:fix-code
+        types: ["python"]
+    -   id: sql-check
+        name: sql-check
+        language: system
+        verbose: true
+        entry: hatch run linter:fix-sql
         types: ["python"]
