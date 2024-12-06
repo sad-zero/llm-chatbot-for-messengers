@@ -124,4 +124,5 @@ jobs:
           git config user.name "bot"
           git config user.email "bot@love.you"
           git revert --no-edit HEAD
-          git push origin ${{ github.ref_name}}
+          git log
+          # git push origin ${{ github.ref_name}}
