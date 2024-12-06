@@ -18,6 +18,7 @@ jobs:
       - uses: Actions/checkout@v4.2.2
       - name: Setup environments
         run: |
+          exit 1
           sudo apt update
           sudo apt install pipx -y
           pipx ensurepath
@@ -26,7 +27,6 @@ jobs:
       - name: Check type
         run: |
           hatch run types:check
-          exit 1
       - name: Check code style
         run: |
           hatch run linter:fix-code
@@ -53,6 +53,7 @@ jobs:
       - uses: Actions/checkout@v4.2.2
       - name: Setup environments
         run: |
+          exit 1
           sudo apt update
           sudo apt install pipx -y
           pipx ensurepath
@@ -123,6 +124,6 @@ jobs:
         run: |
           git config user.name "bot"
           git config user.email "bot@love.you"
-          git revert --no-edit HEAD
+          # git revert --no-edit HEAD
           git log
           # git push origin ${{ github.ref_name}}
