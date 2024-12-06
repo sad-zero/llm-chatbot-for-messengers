@@ -18,7 +18,6 @@ jobs:
       - uses: Actions/checkout@v4.2.2
       - name: Setup environments
         run: |
-          exit 1
           sudo apt update
           sudo apt install pipx -y
           pipx ensurepath
@@ -53,7 +52,6 @@ jobs:
       - uses: Actions/checkout@v4.2.2
       - name: Setup environments
         run: |
-          exit 1
           sudo apt update
           sudo apt install pipx -y
           pipx ensurepath
@@ -121,7 +119,7 @@ jobs:
     steps:
       - uses: Actions/checkout@v4.2.2
         with:
-          fetch-depth: 0
+          fetch-depth: 2
       - name: Revert failed commit
         run: |
           git config user.name "bot"
