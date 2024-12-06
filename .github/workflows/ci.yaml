@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - develop
+      - ci/revert-if-fail
   pull_request:
     branches:
       - main
@@ -25,6 +26,7 @@ jobs:
       - name: Check type
         run: |
           hatch run types:check
+          exit 1
       - name: Check code style
         run: |
           hatch run linter:fix-code
@@ -107,3 +109,19 @@ jobs:
           else
               echo "Already sync dependencies"
           fi
+  revert:
+    needs:
+      - style
+      - test
+    if: ${{ failure() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/ci/revert-if-fail') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: Actions/checkout@v4.2.2
+      - name: Revert failed commit
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@love.you"
+          git revert --no-edit HEAD
+          git push origin ${{ github.ref_name}}
