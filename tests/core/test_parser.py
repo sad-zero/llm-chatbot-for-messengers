@@ -1,4 +1,3 @@
-import pytest
 from langchain.prompts import ChatPromptTemplate
 from llm_chatbot_for_messengers.core.output.parser import YamlPromptTemplateParser
 
@@ -16,7 +15,3 @@ def test_yaml_parser():
     actual = parser.parse_file(node_name=node_name, template_name=template_name)
     # then
     assert expected == actual
-
-
-def test_fail():
-    pytest.fail(reason='test')
