@@ -120,11 +120,11 @@ jobs:
       contents: write
     steps:
       - uses: Actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
       - name: Revert failed commit
         run: |
           git config user.name "bot"
           git config user.email "bot@love.you"
-          # git revert --no-edit HEAD
-          git fetch
-          git log
-          # git push origin ${{ github.ref_name}}
+          git revert --no-edit HEAD
+          git push origin ${{ github.ref_name}}
