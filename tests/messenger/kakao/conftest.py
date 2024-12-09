@@ -9,5 +9,6 @@ from starlette.routing import _DefaultLifespan  # noqa: PLC2701
 @pytest.fixture(scope='session')
 def client() -> Generator[TestClient, None, None]:
     app.router.lifespan_context = _DefaultLifespan(app.router)  # Ignore app's lifespan
+    app.user_middleware = []
     with TestClient(app) as client:
         yield client

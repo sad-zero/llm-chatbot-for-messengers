@@ -19,7 +19,7 @@ async def test_token_bucket_rate_limit():
     request = MessengerRequest(user=user, messenger=messenger)
     # when & then
     for _ in range(limit):
-        assert await strategy.accept(request) is True
-    assert await strategy.accept(request) is False
+        assert (await strategy.accept(request))[0] is True
+    assert (await strategy.accept(request))[0] is False
     await sleep(period // limit)
-    assert await strategy.accept(request) is True
+    assert (await strategy.accept(request))[0] is True
