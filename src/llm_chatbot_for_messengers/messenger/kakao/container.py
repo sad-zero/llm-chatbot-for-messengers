@@ -6,6 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI
 
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
+from llm_chatbot_for_messengers.core.output.dao import InMemoryMessengerDaoImpl, MessengerDao
 from llm_chatbot_for_messengers.core.output.memory import PersistentMemoryManager
 from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowGlobalConfig, WorkflowNodeConfig
 from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
@@ -32,6 +33,12 @@ class AgentContainer(containers.DeclarativeContainer):
     )
 
 
+class DaoContainer(containers.DeclarativeContainer):
+    messenger_dao: providers.Singleton[MessengerDao] = providers.ThreadSafeSingleton(
+        InMemoryMessengerDaoImpl,
+    )
+
+
 class MiddlewareContainer(containers.DeclarativeContainer):
     rate_limit: providers.Singleton[RateLimitStrategy] = providers.ThreadSafeSingleton(
         InMemoryTokenBucketRateLimitStrategy,
@@ -44,12 +51,16 @@ class MiddlewareContainer(containers.DeclarativeContainer):
 async def manage_resources(app: FastAPI):  # noqa: ARG001
     agent_container = AgentContainer()
     middleware_container = MiddlewareContainer()
-    await _initialize(agent_container, middleware_container)
+    dao_container = DaoContainer()
+
+    await _initialize(agent_container, middleware_container, dao_container)
     yield
-    await _release(agent_container, middleware_container)
+    await _release(agent_container, middleware_container, dao_container)
 
 
-async def _initialize(agent_container: AgentContainer, middleware_container: MiddlewareContainer):
+async def _initialize(
+    agent_container: AgentContainer, middleware_container: MiddlewareContainer, dao_container: DaoContainer
+):
     agent_container.check_dependencies()
     qa_agent = agent_container.qa_agent()
     await qa_agent.initialize()
@@ -67,8 +78,17 @@ async def _initialize(agent_container: AgentContainer, middleware_container: Mid
         ]
     )
 
+    dao_container.check_dependencies()
+    dao_container.wire(
+        modules=[
+            'llm_chatbot_for_messengers.messenger.kakao.container',
+        ]
+    )
 
-async def _release(agent_container: AgentContainer, middleware_container: MiddlewareContainer):
+
+async def _release(
+    agent_container: AgentContainer, middleware_container: MiddlewareContainer, dao_container: DaoContainer
+):
     qa_agent = agent_container.qa_agent()
     await qa_agent.shutdown()
     agent_container.unwire()
@@ -76,6 +96,9 @@ async def _release(agent_container: AgentContainer, middleware_container: Middle
 
     middleware_container.unwire()
     middleware_container.reset_singletons()
+
+    dao_container.unwire()
+    dao_container.reset_singletons()
 
 
 _qa_agent: QAAgent = Provide[AgentContainer.qa_agent]
@@ -90,3 +113,12 @@ def get_rate_limit_strategy(
     rate_limit_strategy: RateLimitStrategy = Provide[MiddlewareContainer.rate_limit],
 ) -> RateLimitStrategy:
     return rate_limit_strategy
+
+
+@inject
+def _get_messenger_dao(messenger_dao: MessengerDao = Provide[DaoContainer.messenger_dao]) -> MessengerDao:
+    return messenger_dao
+
+
+def get_messenger_dao() -> MessengerDao:
+    return _get_messenger_dao()

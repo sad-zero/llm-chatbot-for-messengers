@@ -9,9 +9,11 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
-from llm_chatbot_for_messengers.core.entity.user import User  # noqa: TCH001
+from llm_chatbot_for_messengers.core.vo import MessengerId  # noqa: TCH001
 
 if TYPE_CHECKING:
+    from llm_chatbot_for_messengers.core.entity.messenger import Messenger
+    from llm_chatbot_for_messengers.core.entity.user import User
     from llm_chatbot_for_messengers.core.vo import UserId
     from llm_chatbot_for_messengers.messenger.vo import MessengerRequest
 
@@ -29,9 +31,10 @@ class RateLimitStrategy(ABC):
         """
 
     @abstractmethod
-    async def refill(self, user: User, timestamp: datetime) -> int:
+    async def refill(self, messenger: Messenger, user: User, timestamp: datetime) -> int:
         """Refill request limits based on timestamp
         Args:
+            messenger(Messenger): Messenger information
             user          (User): User information
             timestamp (datetime): Refill timestamp
         Returns:
@@ -40,33 +43,34 @@ class RateLimitStrategy(ABC):
 
 
 class InMemoryTokenBucketRateLimitStrategy(RateLimitStrategy, BaseModel):
-    """Implemented by TokenBucket Algorithm
-    # TODO: User by messengers
-    """
+    """Implemented by TokenBucket Algorithm"""
 
     limit: int = Field(description='Maximum request number in period', gt=0)
     period: int = Field(description='Seconds to determine the limit is over or not.', gt=1)
-    __bucket: dict[UserId, tuple[datetime, int]] = PrivateAttr(default_factory=dict)
+    __bucket: dict[tuple[MessengerId, UserId], tuple[datetime, int]] = PrivateAttr(default_factory=dict)
 
     @override
     async def accept(self, request: MessengerRequest) -> tuple[bool, int]:
+        messenger: Messenger = request.messenger
         user: User = request.user
         timestamp = datetime.now(timezone.utc)
+        key = self.__get_key(messenger=messenger, user=user)
 
-        if (tokens := await self.refill(user=user, timestamp=timestamp)) <= 0:
-            last_updated_dt, _ = self.__bucket[user.user_id]
+        if (tokens := await self.refill(messenger=messenger, user=user, timestamp=timestamp)) <= 0:
+            last_updated_dt, _ = self.__bucket[key]
             remains = self.__rate - (timestamp - last_updated_dt).seconds
             return False, remains
-        self.__bucket[user.user_id] = (timestamp, tokens - 1)
+        self.__bucket[key] = (timestamp, tokens - 1)
 
-        log_msg: str = f'{user}: {tokens}'
+        log_msg: str = f'{user}: {tokens - 1}'
         logger.info(log_msg)
         return True, 0
 
     @override
-    async def refill(self, user: User, timestamp: datetime) -> int:
-        if (bucket_info := self.__bucket.get(user.user_id)) is None:
-            self.__bucket[user.user_id] = (timestamp, self.limit)
+    async def refill(self, messenger: Messenger, user: User, timestamp: datetime) -> int:
+        key = self.__get_key(messenger=messenger, user=user)
+        if (bucket_info := self.__bucket.get(key)) is None:
+            self.__bucket[key] = (timestamp, self.limit)
             return self.limit
 
         last_updated_dt, tokens = bucket_info
@@ -79,7 +83,7 @@ class InMemoryTokenBucketRateLimitStrategy(RateLimitStrategy, BaseModel):
             return tokens
 
         updated_token = min(self.limit, tokens + new_tokens)
-        self.__bucket[user.user_id] = (timestamp, updated_token)
+        self.__bucket[key] = (timestamp, updated_token)
         return updated_token
 
     @cached_property
@@ -89,3 +93,7 @@ class InMemoryTokenBucketRateLimitStrategy(RateLimitStrategy, BaseModel):
             int: lower bound of period/limit
         """
         return self.period // self.limit
+
+    @classmethod
+    def __get_key(cls, messenger: Messenger, user: User) -> tuple[MessengerId, UserId]:
+        return messenger.messenger_id, user.user_id

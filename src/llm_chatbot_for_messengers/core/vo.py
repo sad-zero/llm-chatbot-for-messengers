@@ -26,6 +26,25 @@ class UserId(BaseModel):
         return self
 
 
+class MessengerId(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    messenger_seq: int | None = Field(description="Messenger's sequence", default=None)
+    messenger_id: str | None = Field(description="Messenger's unique string", default=None)
+
+    @model_validator(mode='after')
+    def check_id(self) -> Self:
+        if (self.messenger_seq, self.messenger_id) == (None, None):
+            err_msg: str = 'One of id or seq should exist.'
+            raise ValueError(err_msg)
+        return self
+
+
+@unique
+class MessengerIdEnum(Enum):
+    KAKAO = MessengerId(messenger_seq=1, messenger_id='kakao')
+
+
 class QAState(BaseModel):
     question: str | None = Field(description="User's question", default=None)
     answer: str | None = Field(description="Agent's answer", default=None)

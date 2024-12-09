@@ -1,8 +1,9 @@
 from asyncio import sleep
 
 import pytest
+from llm_chatbot_for_messengers.core.entity.messenger import Messenger
 from llm_chatbot_for_messengers.core.entity.user import User
-from llm_chatbot_for_messengers.core.vo import UserId
+from llm_chatbot_for_messengers.core.vo import MessengerId, UserId
 from llm_chatbot_for_messengers.messenger.middleware.rate_limit import InMemoryTokenBucketRateLimitStrategy
 from llm_chatbot_for_messengers.messenger.vo import MessengerRequest
 
@@ -15,7 +16,9 @@ async def test_token_bucket_rate_limit():
     strategy = InMemoryTokenBucketRateLimitStrategy(limit=limit, period=period)
 
     user = User(user_id=UserId(user_id='test_id'))
-    messenger: str = 'test-messenger'
+    messenger: Messenger = Messenger(
+        messenger_id=MessengerId(messenger_id='test-messenger'), messenger_name='test-messenger'
+    )
     request = MessengerRequest(user=user, messenger=messenger)
     # when & then
     for _ in range(limit):
