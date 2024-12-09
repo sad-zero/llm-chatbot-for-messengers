@@ -1,4 +1,3 @@
-import os
 from contextlib import asynccontextmanager
 
 from dependency_injector import containers, providers
@@ -6,8 +5,13 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI
 
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
-from llm_chatbot_for_messengers.core.output.memory import PersistentMemoryManager
+from llm_chatbot_for_messengers.core.output.dao import InMemoryMessengerDaoImpl, MessengerDao
+from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
 from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowGlobalConfig, WorkflowNodeConfig
+from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
+    InMemoryTokenBucketRateLimitStrategy,
+    RateLimitStrategy,
+)
 
 
 class AgentContainer(containers.DeclarativeContainer):
@@ -22,21 +26,40 @@ class AgentContainer(containers.DeclarativeContainer):
         },
         global_configs=WorkflowGlobalConfig(
             fallback_message='미안해용. ㅠㅠ 질문이 너무 어려워용..',
-            memory_manager=PersistentMemoryManager(conn_uri=os.getenv('CORE_DB_URI')),  # type: ignore
-            # memory_manager=VolatileMemoryManager(),
+            # memory_manager=PersistentMemoryManager(conn_uri=os.getenv('CORE_DB_URI')),  # type: ignore
+            memory_manager=VolatileMemoryManager(),
         ),
+    )
+
+
+class DaoContainer(containers.DeclarativeContainer):
+    messenger_dao: providers.Singleton[MessengerDao] = providers.ThreadSafeSingleton(
+        InMemoryMessengerDaoImpl,
+    )
+
+
+class MiddlewareContainer(containers.DeclarativeContainer):
+    rate_limit: providers.Singleton[RateLimitStrategy] = providers.ThreadSafeSingleton(
+        InMemoryTokenBucketRateLimitStrategy,
+        limit=100,
+        period=86400,  # 1 day
     )
 
 
 @asynccontextmanager
 async def manage_resources(app: FastAPI):  # noqa: ARG001
     agent_container = AgentContainer()
-    await _initialize(agent_container)
+    middleware_container = MiddlewareContainer()
+    dao_container = DaoContainer()
+
+    await _initialize(agent_container, middleware_container, dao_container)
     yield
-    await _release(agent_container)
+    await _release(agent_container, middleware_container, dao_container)
 
 
-async def _initialize(agent_container: AgentContainer):
+async def _initialize(
+    agent_container: AgentContainer, middleware_container: MiddlewareContainer, dao_container: DaoContainer
+):
     agent_container.check_dependencies()
     qa_agent = agent_container.qa_agent()
     await qa_agent.initialize()
@@ -47,22 +70,54 @@ async def _initialize(agent_container: AgentContainer):
         ]
     )
 
+    middleware_container.check_dependencies()
+    middleware_container.wire(
+        modules=[
+            'llm_chatbot_for_messengers.messenger.kakao.container',
+        ]
+    )
 
-async def _release(agent_container: AgentContainer):
+    dao_container.check_dependencies()
+    dao_container.wire(
+        modules=[
+            'llm_chatbot_for_messengers.messenger.kakao.container',
+        ]
+    )
+
+
+async def _release(
+    agent_container: AgentContainer, middleware_container: MiddlewareContainer, dao_container: DaoContainer
+):
     qa_agent = agent_container.qa_agent()
     await qa_agent.shutdown()
     agent_container.unwire()
     agent_container.reset_singletons()
 
+    middleware_container.unwire()
+    middleware_container.reset_singletons()
 
-@inject
-def _get_qa_agent(agent: QAAgent = Provide[AgentContainer.qa_agent]) -> QAAgent:
-    """
-    Returns:
-        QAAgent: Fully initialized instance
-    """
-    return agent
+    dao_container.unwire()
+    dao_container.reset_singletons()
+
+
+_qa_agent: QAAgent = Provide[AgentContainer.qa_agent]
 
 
 def get_qa_agent() -> QAAgent:
-    return _get_qa_agent()
+    return _qa_agent
+
+
+@inject
+def get_rate_limit_strategy(
+    rate_limit_strategy: RateLimitStrategy = Provide[MiddlewareContainer.rate_limit],
+) -> RateLimitStrategy:
+    return rate_limit_strategy
+
+
+@inject
+def _get_messenger_dao(messenger_dao: MessengerDao = Provide[DaoContainer.messenger_dao]) -> MessengerDao:
+    return messenger_dao
+
+
+def get_messenger_dao() -> MessengerDao:
+    return _get_messenger_dao()

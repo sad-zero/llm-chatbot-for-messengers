@@ -87,7 +87,7 @@ LANGCHAIN_API_KEY = "{env:LANGCHAIN_API_KEY:<<YOUR LANGSMITH API KEY>>}"
 LANGCHAIN_PROJECT = "{env:LANGCHAIN_PROJECT:<<YOUR LANGSMITH PROJECT NAME>>}"
 
 PROMPT_DIR = "src/resources/prompt"
-CORE_DB_URI = "{env:CORE_DB_URI:<<YOUR postgresql DB URI>>"
+CORE_DB_URI = "{env:CORE_DB_URI:<<YOUR postgresql DB URI>>}"
 
 [tool.hatch.envs.default.scripts]
 pip = "$HATCH_UV pip {args}"
@@ -131,7 +131,7 @@ check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/l
 detached = true
 
 dependencies = [
-  "sqlfluff>=3.2, <3.3"
+  "sqlfluff>=3.2, <3.3",
 ]
 
 [tool.hatch.envs.linter.scripts]

@@ -8,3 +8,7 @@ class ParserError(RuntimeError):
 
 class ResourceError(RuntimeError):
     pass
+
+
+class DataError(RuntimeError):
+    pass
