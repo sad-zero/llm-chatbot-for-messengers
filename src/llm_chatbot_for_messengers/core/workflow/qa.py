@@ -7,9 +7,9 @@ from langchain.output_parsers import PydanticOutputParser
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_openai import ChatOpenAI
 
-from llm_chatbot_for_messengers.core.custom_langgraph import PydanticStateGraph, Workflow
 from llm_chatbot_for_messengers.core.output.template import get_template
 from llm_chatbot_for_messengers.core.vo import AnswerNodeResponse, QAState
+from llm_chatbot_for_messengers.core.workflow.base import PydanticStateGraph, Workflow
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel

@@ -12,7 +12,6 @@ from langchain_openai import ChatOpenAI
 from pydantic import AfterValidator, BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
-from llm_chatbot_for_messengers.core.custom_langgraph import Workflow  # noqa: TCH001
 from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.error import SpecificationError
 from llm_chatbot_for_messengers.core.specification import (
@@ -21,7 +20,8 @@ from llm_chatbot_for_messengers.core.specification import (
     check_workflow_configs,
 )
 from llm_chatbot_for_messengers.core.vo import LLMConfig, LLMProvider, QAState, WorkflowGlobalConfig, WorkflowNodeConfig
-from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflow
+from llm_chatbot_for_messengers.core.workflow.base import Workflow  # noqa: TCH001
+from llm_chatbot_for_messengers.core.workflow.qa import get_question_answer_workflow
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel

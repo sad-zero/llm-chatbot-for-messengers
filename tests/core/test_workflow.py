@@ -3,7 +3,7 @@ import json
 import pytest
 from langchain_community.llms.fake import FakeListLLM
 from llm_chatbot_for_messengers.core.vo import QAState
-from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflow
+from llm_chatbot_for_messengers.core.workflow.qa import get_question_answer_workflow
 
 
 @pytest.mark.asyncio(loop_scope='function')

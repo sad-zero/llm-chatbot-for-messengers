@@ -1,5 +1,3 @@
-"""langgraph wrapper"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Generic, TypeVar
