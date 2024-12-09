@@ -7,12 +7,14 @@ from typing import Annotated, Any, Literal, Self
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_core.messages import AnyMessage  # noqa: TCH002
 from langgraph.graph import add_messages  # noqa: TCH002
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from llm_chatbot_for_messengers.core.output.memory import MemoryManager  # noqa: TCH001
 
 
 class UserId(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     user_seq: int | None = Field(description="User's sequence", default=None)
     user_id: str | None = Field(description="User's unique string", default=None)
 
@@ -75,6 +77,8 @@ class LLMProvider(Enum):
 
 
 class LLMConfig(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     provider: LLMProvider = Field(description='LLM Provider', default=LLMProvider.OPENAI)
     model: str = Field(description='LLM Name', default='gpt-4o-2024-08-06')
     temperature: float = Field(description='LLM Temperature', default=0.52)
@@ -86,21 +90,24 @@ class LLMConfig(BaseModel):
 
 
 class WorkflowNodeConfig(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     node_name: str = Field(description='Workflow node name')
     template_name: str | None = Field(description='Workflow node prompt template name', default=None)
     llm_config: LLMConfig | None = Field(description="Workflow node's LLM Config", default=None)
 
 
 class WorkflowGlobalConfig(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
     fallback_message: str = Field(description='Fallback message is returned when normal flows fail')
 
     memory_manager: MemoryManager | None = Field(
         description='Manager that control memories. None means stateless.', default=None
     )
 
-    class Config:
-        arbitrary_types_allowed = True
-
 
 class AnswerNodeResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     answer: str = Field(description="Answer node's output")
