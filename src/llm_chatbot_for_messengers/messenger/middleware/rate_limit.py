@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from functools import cached_property
@@ -14,15 +15,17 @@ if TYPE_CHECKING:
     from llm_chatbot_for_messengers.core.vo import UserId
     from llm_chatbot_for_messengers.messenger.vo import MessengerRequest
 
+logger = logging.getLogger(__name__)
+
 
 class RateLimitStrategy(ABC):
     @abstractmethod
-    async def accept(self, request: MessengerRequest) -> bool:
+    async def accept(self, request: MessengerRequest) -> tuple[bool, int]:
         """Determine whether this request is valid or not.
         Args:
             request (MessengerRequest): Request information
         Returns:
-            bool: True if the request is acceptable else False.
+            tuple[bool, int]: True if the request is acceptable else False. Next available seconds.
         """
 
     @abstractmethod
@@ -36,7 +39,7 @@ class RateLimitStrategy(ABC):
         """
 
 
-class TokenBucketRateLimitStrategy(RateLimitStrategy, BaseModel):
+class InMemoryTokenBucketRateLimitStrategy(RateLimitStrategy, BaseModel):
     """Implemented by TokenBucket Algorithm
     # TODO: User by messengers
     """
@@ -46,14 +49,19 @@ class TokenBucketRateLimitStrategy(RateLimitStrategy, BaseModel):
     __bucket: dict[UserId, tuple[datetime, int]] = PrivateAttr(default_factory=dict)
 
     @override
-    async def accept(self, request: MessengerRequest) -> bool:
+    async def accept(self, request: MessengerRequest) -> tuple[bool, int]:
         user: User = request.user
         timestamp = datetime.now(timezone.utc)
 
         if (tokens := await self.refill(user=user, timestamp=timestamp)) <= 0:
-            return False
+            last_updated_dt, _ = self.__bucket[user.user_id]
+            remains = self.__rate - (timestamp - last_updated_dt).seconds
+            return False, remains
         self.__bucket[user.user_id] = (timestamp, tokens - 1)
-        return True
+
+        log_msg: str = f'{user}: {tokens}'
+        logger.info(log_msg)
+        return True, 0
 
     @override
     async def refill(self, user: User, timestamp: datetime) -> int:
@@ -67,6 +75,9 @@ class TokenBucketRateLimitStrategy(RateLimitStrategy, BaseModel):
             raise ValueError(err_msg)
         elapsed_sec = (timestamp - last_updated_dt).seconds
         new_tokens: int = elapsed_sec // self.__rate
+        if new_tokens == 0:
+            return tokens
+
         updated_token = min(self.limit, tokens + new_tokens)
         self.__bucket[user.user_id] = (timestamp, updated_token)
         return updated_token

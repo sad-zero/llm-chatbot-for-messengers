@@ -8,6 +8,10 @@ from fastapi import FastAPI
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.core.output.memory import PersistentMemoryManager
 from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowGlobalConfig, WorkflowNodeConfig
+from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
+    InMemoryTokenBucketRateLimitStrategy,
+    RateLimitStrategy,
+)
 
 
 class AgentContainer(containers.DeclarativeContainer):
@@ -28,15 +32,24 @@ class AgentContainer(containers.DeclarativeContainer):
     )
 
 
+class MiddlewareContainer(containers.DeclarativeContainer):
+    rate_limit: providers.Singleton[RateLimitStrategy] = providers.ThreadSafeSingleton(
+        InMemoryTokenBucketRateLimitStrategy,
+        limit=100,
+        period=86400,  # 1 day
+    )
+
+
 @asynccontextmanager
 async def manage_resources(app: FastAPI):  # noqa: ARG001
     agent_container = AgentContainer()
-    await _initialize(agent_container)
+    middleware_container = MiddlewareContainer()
+    await _initialize(agent_container, middleware_container)
     yield
-    await _release(agent_container)
+    await _release(agent_container, middleware_container)
 
 
-async def _initialize(agent_container: AgentContainer):
+async def _initialize(agent_container: AgentContainer, middleware_container: MiddlewareContainer):
     agent_container.check_dependencies()
     qa_agent = agent_container.qa_agent()
     await qa_agent.initialize()
@@ -47,22 +60,33 @@ async def _initialize(agent_container: AgentContainer):
         ]
     )
 
+    middleware_container.check_dependencies()
+    middleware_container.wire(
+        modules=[
+            'llm_chatbot_for_messengers.messenger.kakao.container',
+        ]
+    )
 
-async def _release(agent_container: AgentContainer):
+
+async def _release(agent_container: AgentContainer, middleware_container: MiddlewareContainer):
     qa_agent = agent_container.qa_agent()
     await qa_agent.shutdown()
     agent_container.unwire()
     agent_container.reset_singletons()
 
+    middleware_container.unwire()
+    middleware_container.reset_singletons()
 
-@inject
-def _get_qa_agent(agent: QAAgent = Provide[AgentContainer.qa_agent]) -> QAAgent:
-    """
-    Returns:
-        QAAgent: Fully initialized instance
-    """
-    return agent
+
+_qa_agent: QAAgent = Provide[AgentContainer.qa_agent]
 
 
 def get_qa_agent() -> QAAgent:
-    return _get_qa_agent()
+    return _qa_agent
+
+
+@inject
+def get_rate_limit_strategy(
+    rate_limit_strategy: RateLimitStrategy = Provide[MiddlewareContainer.rate_limit],
+) -> RateLimitStrategy:
+    return rate_limit_strategy
