@@ -1,4 +1,3 @@
-import os
 from contextlib import asynccontextmanager
 
 from dependency_injector import containers, providers
@@ -7,7 +6,7 @@ from fastapi import FastAPI
 
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.core.output.dao import InMemoryMessengerDaoImpl, MessengerDao
-from llm_chatbot_for_messengers.core.output.memory import PersistentMemoryManager
+from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
 from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowGlobalConfig, WorkflowNodeConfig
 from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
     InMemoryTokenBucketRateLimitStrategy,
@@ -27,8 +26,8 @@ class AgentContainer(containers.DeclarativeContainer):
         },
         global_configs=WorkflowGlobalConfig(
             fallback_message='미안해용. ㅠㅠ 질문이 너무 어려워용..',
-            memory_manager=PersistentMemoryManager(conn_uri=os.getenv('CORE_DB_URI')),  # type: ignore
-            # memory_manager=VolatileMemoryManager(),
+            # memory_manager=PersistentMemoryManager(conn_uri=os.getenv('CORE_DB_URI')),  # type: ignore
+            memory_manager=VolatileMemoryManager(),
         ),
     )
 
