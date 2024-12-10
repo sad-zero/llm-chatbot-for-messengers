@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.core.output.dao import InMemoryMessengerDaoImpl, MessengerDao
 from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
-from llm_chatbot_for_messengers.core.vo import LLMConfig, WorkflowGlobalConfig, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.vo import AgentConfig, LLMConfig
 from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
     InMemoryTokenBucketRateLimitStrategy,
     RateLimitStrategy,
@@ -17,18 +17,16 @@ from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
 class AgentContainer(containers.DeclarativeContainer):
     qa_agent: providers.Singleton[QAAgent] = providers.ThreadSafeSingleton(
         QAAgentImpl,
-        workflow_configs={
-            'answer_node': WorkflowNodeConfig(
-                node_name='answer_node',
-                template_name='kakao_v2',
-                llm_config=LLMConfig(model='gpt-4o-2024-08-06', temperature=0.52, max_tokens=200),
-            )
-        },
-        global_configs=WorkflowGlobalConfig(
-            fallback_message='미안해용. ㅠㅠ 질문이 너무 어려워용..',
-            # memory_manager=PersistentMemoryManager(conn_uri=os.getenv('CORE_DB_URI')),  # type: ignore
-            memory_manager=VolatileMemoryManager(),
-        ),
+        config=AgentConfig.builder()
+        .add_node(
+            node_name='answer_node',
+            template_name='kakao_v2',
+            llm_config=LLMConfig(model='gpt-4o-2024-08-06', temperature=0.52, max_tokens=200),
+        )
+        .add_fallback('미안해용. ㅠㅠ 질문이 너무 어려워용..')
+        .add_memory_manager(memory_manager=VolatileMemoryManager())
+        #   .add_memory_manager(memory_manager=PersistentMemoryManager(conn_uri=os.getenv('CORE_DB_URI'))),  # type: ignore
+        .build(),
     )
 
 

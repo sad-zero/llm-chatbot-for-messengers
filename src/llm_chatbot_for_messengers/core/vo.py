@@ -7,9 +7,10 @@ from typing import Annotated, Any, Literal, Self
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_core.messages import AnyMessage  # noqa: TCH002
 from langgraph.graph import add_messages  # noqa: TCH002
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from llm_chatbot_for_messengers.core.output.memory import MemoryManager  # noqa: TCH001
+from llm_chatbot_for_messengers.core.specification import check_necessary_nodes, check_workflow_configs  # noqa: TCH001
 
 
 class UserId(BaseModel):
@@ -113,10 +114,10 @@ class WorkflowNodeConfig(BaseModel):
 
     node_name: str = Field(description='Workflow node name')
     template_name: str | None = Field(description='Workflow node prompt template name', default=None)
-    llm_config: LLMConfig | None = Field(description="Workflow node's LLM Config", default=None)
+    llm_config: LLMConfig = Field(description="Workflow node's LLM Config", default_factory=LLMConfig)
 
 
-class WorkflowGlobalConfig(BaseModel):
+class AgentExtraConfig(BaseModel):
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     fallback_message: str = Field(description='Fallback message is returned when normal flows fail')
@@ -124,6 +125,49 @@ class WorkflowGlobalConfig(BaseModel):
     memory_manager: MemoryManager | None = Field(
         description='Manager that control memories. None means stateless.', default=None
     )
+
+
+class AgentConfig(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    node_configs: Annotated[
+        dict[str, WorkflowNodeConfig],
+        AfterValidator(check_workflow_configs),
+        AfterValidator(check_necessary_nodes('answer_node')),
+    ] = Field(description='Node configurations. Key equals to node_name.')
+    global_configs: AgentExtraConfig = Field(description='Global configurations')
+
+    @classmethod
+    def builder(cls) -> _Builder:
+        return cls._Builder()
+
+    class _Builder:
+        def __init__(self):
+            self.__node_configs = {}
+            self.__global_configs = {}
+
+        def add_node(self, node_name: str, template_name: str | None, llm_config: LLMConfig | None = None) -> Self:
+            self.__node_configs[node_name] = WorkflowNodeConfig(
+                node_name=node_name, template_name=template_name, llm_config=llm_config or LLMConfig()
+            )
+            return self
+
+        def add_fallback(self, fallback_message: str) -> Self:
+            self.__global_configs['fallback'] = fallback_message
+            return self
+
+        def add_memory_manager(self, memory_manager: MemoryManager) -> Self:
+            self.__global_configs['memory_manager'] = memory_manager
+            return self
+
+        def build(self) -> AgentConfig:
+            return AgentConfig(
+                node_configs=self.__node_configs,
+                global_configs=AgentExtraConfig(
+                    fallback_message=self.__global_configs['fallback'],
+                    memory_manager=self.__global_configs['memory_manager'],
+                ),
+            )
 
 
 class AnswerNodeResponse(BaseModel):

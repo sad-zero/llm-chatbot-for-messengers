@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.runnables import Runnable, RunnablePassthrough
-from langchain_openai import ChatOpenAI
+from typing_extensions import override
 
 from llm_chatbot_for_messengers.core.output.template import get_template
-from llm_chatbot_for_messengers.core.vo import AnswerNodeResponse, QAState
-from llm_chatbot_for_messengers.core.workflow.base import PydanticStateGraph, Workflow
+from llm_chatbot_for_messengers.core.vo import AnswerNodeResponse, QAState, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.workflow.base import Workflow
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -57,24 +57,20 @@ async def answer_node(state: QAState, llm: BaseChatModel, template_name: str | N
     return QAState.put_answer(answer=answer.answer)
 
 
-def get_question_answer_workflow(
-    answer_node_llm: BaseChatModel | None = None,
-    answer_node_template_name: str | None = None,
-    memory: MemoryType | None = None,
-) -> Workflow[QAState]:
-    """
-    Args:
-        answer_node_llm (BaseChatModel | None): LLM for answer node
-        answer_node_template_name (str | None): Prompt template for answer node
-        memory_type               (str | None): Memory Type
-    Returns:
-        Workflow: Question Answer Workflow
-    """
-    if answer_node_llm is None:
-        answer_node_llm = ChatOpenAI(model='gpt-4o-2024-08-06', temperature=0.52, top_p=0.7, max_tokens=200)
-    answer_node_with_llm = partial(answer_node, llm=answer_node_llm, template_name=answer_node_template_name)
-    builder = PydanticStateGraph(QAState)
-    builder.add_node('answer_node', answer_node_with_llm)
-    builder.set_entry_point('answer_node')
-    builder.set_finish_point('answer_node')
-    return builder.compile(checkpointer=memory)
+class QAWorkflow(Workflow[QAState]):
+    @classmethod
+    @override
+    def get_instance(cls, config: dict[str, WorkflowNodeConfig], memory: MemoryType | None) -> Self:
+        if (answer_node_config := config.get('answer_node')) is None:
+            answer_node_config = WorkflowNodeConfig(node_name='answer_node')
+        answer_node_llm = cls._build_llm(llm_config=answer_node_config.llm_config)
+        answer_node_with_llm = partial(answer_node, llm=answer_node_llm, template_name=answer_node_config.template_name)
+
+        graph = (
+            cls._graph_builder(state_schema=QAState)
+            .add_node('answer_node', answer_node_with_llm)
+            .set_entry_point('answer_node')
+            .set_finish_point('answer_node')
+            .compile(checkpointer=memory)
+        )
+        return cls(compiled_graph=graph, state_schema=QAState)
