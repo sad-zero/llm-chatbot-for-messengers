@@ -4,10 +4,10 @@ from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI
 
+from llm_chatbot_for_messengers.core.configuration import AgentConfig, LLMConfig
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.core.output.dao import InMemoryMessengerDaoImpl, MessengerDao
 from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
-from llm_chatbot_for_messengers.core.vo import AgentConfig, LLMConfig
 from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
     InMemoryTokenBucketRateLimitStrategy,
     RateLimitStrategy,

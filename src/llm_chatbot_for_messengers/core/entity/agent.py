@@ -11,16 +11,14 @@ from typing import TYPE_CHECKING, cast
 from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
+from llm_chatbot_for_messengers.core.configuration import AgentConfig  # noqa: TCH001
 from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.error import SpecificationError
 from llm_chatbot_for_messengers.core.specification import (
     check_timeout,
 )
-from llm_chatbot_for_messengers.core.vo import (
-    AgentConfig,
-    QAState,
-)
 from llm_chatbot_for_messengers.core.workflow.qa import QAWorkflow
+from llm_chatbot_for_messengers.core.workflow.vo import QAState
 
 if TYPE_CHECKING:
     from llm_chatbot_for_messengers.core.output.memory import MemoryType

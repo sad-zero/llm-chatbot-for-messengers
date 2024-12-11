@@ -2,8 +2,9 @@ import asyncio
 import os
 
 import pytest
-from llm_chatbot_for_messengers.core.vo import LLMConfig, WebSummaryState, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.configuration import LLMConfig, WorkflowNodeConfig
 from llm_chatbot_for_messengers.core.workflow.qa import WebSummaryWorkflow
+from llm_chatbot_for_messengers.core.workflow.vo import WebSummaryState
 
 
 @pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason='API KEY cannot be used.')
@@ -24,8 +25,7 @@ async def test_web_summary_workflow(url, expected):
     workflow: WebSummaryWorkflow = WebSummaryWorkflow.get_instance(config=config)
     state = WebSummaryState(url=url)  # type: ignore
     # when
-    async with asyncio.timeout(4):
-        result: WebSummaryState = await workflow.ainvoke(state)
+    result: WebSummaryState = await asyncio.wait_for(workflow.ainvoke(state), timeout=4)
     # then
     match expected:
         case 'ok':
