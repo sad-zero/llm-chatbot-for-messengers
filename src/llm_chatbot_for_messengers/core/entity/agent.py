@@ -6,26 +6,23 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Annotated, cast
+from typing import TYPE_CHECKING, cast
 
-from langchain_openai import ChatOpenAI
-from pydantic import AfterValidator, BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
-from llm_chatbot_for_messengers.core.custom_langgraph import Workflow  # noqa: TCH001
 from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.error import SpecificationError
 from llm_chatbot_for_messengers.core.specification import (
-    check_necessary_nodes,
     check_timeout,
-    check_workflow_configs,
 )
-from llm_chatbot_for_messengers.core.vo import LLMConfig, LLMProvider, QAState, WorkflowGlobalConfig, WorkflowNodeConfig
-from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflow
+from llm_chatbot_for_messengers.core.vo import (
+    AgentConfig,
+    QAState,
+)
+from llm_chatbot_for_messengers.core.workflow.qa import QAWorkflow
 
 if TYPE_CHECKING:
-    from langchain_core.language_models import BaseChatModel
-
     from llm_chatbot_for_messengers.core.output.memory import MemoryType
 
 
@@ -93,64 +90,26 @@ class QAAgent(ABC):
 
 
 class QAAgentImpl(BaseModel, QAAgent):
-    workflow_configs: Annotated[
-        dict[str, WorkflowNodeConfig],
-        AfterValidator(check_workflow_configs),
-        AfterValidator(check_necessary_nodes('answer_node')),
-    ] = Field(description='Key equals to WorkflowNodeConfig.node_name')
-    global_configs: WorkflowGlobalConfig = Field(description='Global configuration.')
-    _workflow: Workflow[QAState] | None = PrivateAttr(default=None)
+    config: AgentConfig = Field(description='Agent configuration')
+    __workflow: QAWorkflow = PrivateAttr(default=None)  # type: ignore
 
     @override
     async def initialize(self) -> None:
-        if self.global_configs.memory_manager is not None:
-            memory: MemoryType | None = await self.global_configs.memory_manager.acquire_memory()
+        if self.config.global_configs.memory_manager is not None:
+            memory: MemoryType | None = await self.config.global_configs.memory_manager.acquire_memory()
         else:
             memory = None
-
-        answer_node_config: WorkflowNodeConfig = self.workflow_configs['answer_node']
-        answer_node_llm: BaseChatModel | None = None
-        if answer_node_config.llm_config is not None:
-            answer_node_llm = self.__build_llm(llm_config=answer_node_config.llm_config)
-
-        self._workflow = get_question_answer_workflow(
-            answer_node_llm=answer_node_llm,
-            answer_node_template_name=answer_node_config.template_name,
-            memory=memory,
-        )
-
-    @staticmethod
-    def __build_llm(llm_config: LLMConfig) -> BaseChatModel:
-        match llm_config.provider:
-            case LLMProvider.OPENAI:
-                model = ChatOpenAI(
-                    model=llm_config.model,
-                    temperature=llm_config.temperature,
-                    top_p=llm_config.top_p,
-                    max_tokens=llm_config.max_tokens,
-                    **llm_config.extra_configs,
-                )
-            case _:
-                err_msg: str = f'Cannot support {llm_config.provider} provider now.'
-                raise RuntimeError(err_msg)
-        return model
-
-    @property
-    def workflow(self) -> Workflow[QAState]:
-        if self._workflow is None:
-            err_msg: str = "Workflow isn't initialized."
-            raise ValueError(err_msg)
-        return self._workflow
+        self.__workflow = QAWorkflow.get_instance(config=self.config.node_configs, memory=memory)
 
     @override
     async def shutdown(self) -> None:
-        if self.global_configs.memory_manager is not None:
-            await self.global_configs.memory_manager.release_memory()
+        if self.config.global_configs.memory_manager is not None:
+            await self.config.global_configs.memory_manager.release_memory()
 
     @override
     async def _ask(self, user: User, question: str) -> str:
         initial: QAState = QAState.put_question(question=question)
-        response: QAState = await self.workflow.ainvoke(
+        response: QAState = await self.__workflow.ainvoke(
             initial,
             config={
                 'run_name': 'QAAgent.ask',
@@ -173,4 +132,4 @@ class QAAgentImpl(BaseModel, QAAgent):
         }
         log_msg: str = f'fallback: {log_info}'
         logger.warning(log_msg)
-        return self.global_configs.fallback_message
+        return self.config.global_configs.fallback_message

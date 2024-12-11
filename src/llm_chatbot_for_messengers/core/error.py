@@ -12,3 +12,7 @@ class ResourceError(RuntimeError):
 
 class DataError(RuntimeError):
     pass
+
+
+class WorkflowError(RuntimeError):
+    pass

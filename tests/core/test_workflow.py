@@ -1,27 +1,34 @@
-import json
+import asyncio
+import os
 
 import pytest
-from langchain_community.llms.fake import FakeListLLM
-from llm_chatbot_for_messengers.core.vo import QAState
-from llm_chatbot_for_messengers.core.workflow import get_question_answer_workflow
+from llm_chatbot_for_messengers.core.vo import LLMConfig, WebSummaryState, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.workflow.qa import WebSummaryWorkflow
 
 
-@pytest.mark.asyncio(loop_scope='function')
-async def test_get_question_answer_workflow():
+@pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason='API KEY cannot be used.')
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ('url', 'expected'),
+    [('https://en.wikipedia.org/wiki/Spider-Man', 'ok'), ('https://invalid-url.xce.fme.aqw', 'error')],
+)
+async def test_web_summary_workflow(url, expected):
     # given
-    answer_node_llm = FakeListLLM(responses=[json.dumps({'answer': 'Hi! What can I do for you?'})])
-    workflow = get_question_answer_workflow(answer_node_llm=answer_node_llm)  # type: ignore
-    question_state: QAState = QAState.put_question(question='Hello!')
+    config = {
+        'summary_node': WorkflowNodeConfig(
+            node_name='summary_node',
+            template_name='test',
+            llm_config=LLMConfig(model='gpt-4o-mini-2024-07-18', max_tokens=200),
+        )
+    }
+    workflow: WebSummaryWorkflow = WebSummaryWorkflow.get_instance(config=config)
+    state = WebSummaryState(url=url)  # type: ignore
     # when
-    answer_state: QAState = await workflow.ainvoke(
-        question_state,
-        debug=True,
-        config={
-            'configurable': {
-                'thread_id': 'test-id',
-            }
-        },
-    )  # type: ignore
+    async with asyncio.timeout(4):
+        result: WebSummaryState = await workflow.ainvoke(state)
     # then
-    assert answer_state.question == question_state.question
-    assert answer_state.answer == 'Hi! What can I do for you?'
+    match expected:
+        case 'ok':
+            assert result.summary is not None
+        case 'error':
+            assert result.error_message is not None
