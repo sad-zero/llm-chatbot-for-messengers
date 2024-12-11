@@ -1,10 +1,12 @@
 import asyncio
+import os
 
 import pytest
 from llm_chatbot_for_messengers.core.vo import LLMConfig, WebSummaryState, WorkflowNodeConfig
 from llm_chatbot_for_messengers.core.workflow.qa import WebSummaryWorkflow
 
 
+@pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason='API KEY cannot be used.')
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ('url', 'expected'),
