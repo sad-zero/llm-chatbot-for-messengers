@@ -7,7 +7,8 @@ from typing import Annotated, Any, Literal, Self
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_core.messages import AnyMessage  # noqa: TCH002
 from langgraph.graph import add_messages  # noqa: TCH002
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, HttpUrl, model_validator
+from typing_extensions import TypedDict
 
 from llm_chatbot_for_messengers.core.output.memory import MemoryManager  # noqa: TCH001
 from llm_chatbot_for_messengers.core.specification import check_necessary_nodes, check_workflow_configs  # noqa: TCH001
@@ -86,6 +87,18 @@ class QAState(BaseModel):
                 err_msg = f'Invalid message type: {message}'
                 raise TypeError(err_msg)
         return json.dumps(result, indent=4, ensure_ascii=False)
+
+
+class WebSummaryState(BaseModel):
+    url: HttpUrl = Field(description='Website url')
+    html_document: str | None = Field(description='HTML document crawled at url', default=None)
+    document: SummaryNodeDocument | None = Field(description='Parsed document', default=None)
+    error_message: str | None = Field(description='Error message', default=None)
+    summary: str | None = Field(description="Agent's summary", default=None)
+
+    @classmethod
+    def initialize(cls, url: str) -> Self:
+        return cls(url=url)  # type: ignore
 
 
 @unique
@@ -174,3 +187,15 @@ class AnswerNodeResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     answer: str = Field(description="Answer node's output")
+
+
+class SummaryNodeDocument(TypedDict):
+    title: str | None
+    content: str
+    is_end: bool
+
+
+class SummaryNodeResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    summary: str = Field(description="Summary node's output")

@@ -27,6 +27,7 @@ dependencies = [
   "fastapi==0.115.5",
   "PyYAML>=6.0, <6.1",
   "dependency-injector>=4.43, <4.44",
+  "beautifulsoup4>=4.12, <4.13",
 ]
 
 [project.scripts]
@@ -118,6 +119,7 @@ extra-dependencies = [
   "pytest>=8.3, <9.0",
   "pytest-asyncio>=0.24",
   "types-PyYAML>=6.0, <6.1",
+  "types-beautifulsoup4>=4.12, <4.13"
 ]
 
 [tool.hatch.envs.types.env-vars]

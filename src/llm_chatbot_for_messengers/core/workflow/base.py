@@ -37,7 +37,7 @@ class Workflow(ABC, Generic[StateSchema]):
 
     @classmethod
     @abstractmethod
-    def get_instance(cls, config: dict[str, WorkflowNodeConfig], memory: MemoryType | None) -> Self:
+    def get_instance(cls, config: dict[str, WorkflowNodeConfig], memory: MemoryType | None = None) -> Self:
         pass
 
     @classmethod
