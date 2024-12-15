@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from llm_chatbot_for_messengers.core.error import SpecificationError
 
 if TYPE_CHECKING:
-    from llm_chatbot_for_messengers.core.vo import WorkflowNodeConfig
+    from llm_chatbot_for_messengers.core.configuration import WorkflowNodeConfig
 
 
 def check_workflow_configs(workflow_configs: dict[str, WorkflowNodeConfig]) -> dict[str, WorkflowNodeConfig]:

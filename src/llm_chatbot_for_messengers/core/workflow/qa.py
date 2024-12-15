@@ -1,28 +1,32 @@
 from __future__ import annotations
 
 import logging
+import re
 from functools import partial
 from typing import TYPE_CHECKING, Self
 
 import aiohttp
-import tiktoken
 from bs4 import BeautifulSoup
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langgraph.graph import END, START
 from typing_extensions import override
 
+from llm_chatbot_for_messengers.core.configuration import (
+    WorkflowNodeConfig,
+)
 from llm_chatbot_for_messengers.core.error import WorkflowError
+from llm_chatbot_for_messengers.core.output.memory import MemoryType
 from llm_chatbot_for_messengers.core.output.template import get_template
-from llm_chatbot_for_messengers.core.vo import (
+from llm_chatbot_for_messengers.core.workflow.base import Workflow
+from llm_chatbot_for_messengers.core.workflow.vo import (
     AnswerNodeResponse,
     QAState,
+    QAWithWebSummaryState,
     SummaryNodeDocument,
     SummaryNodeResponse,
     WebSummaryState,
-    WorkflowNodeConfig,
 )
-from llm_chatbot_for_messengers.core.workflow.base import Workflow
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -59,6 +63,7 @@ class QAWorkflow(Workflow[QAState]):
         Args:
             state            (QAState): {
                 "question": ...,
+                "context": ...,
                 "messages": ...,
             }
             llm        (BaseChatModel): LLM for answer node
@@ -73,7 +78,7 @@ class QAWorkflow(Workflow[QAState]):
             raise WorkflowError(error_msg)
 
         template = get_template(node_name='answer_node', template_name=template_name).partial(
-            messages=state.get_formatted_messages()
+            context=state.context, messages=state.get_formatted_messages()
         )
         try:
             chain: Runnable = (
@@ -90,7 +95,7 @@ class QAWorkflow(Workflow[QAState]):
             )
 
         answer: AnswerNodeResponse = await chain.ainvoke(state.question)
-        return QAState.put_answer(answer=answer.answer)
+        return QAState.put_answer(answer='\n\n'.join(answer.sentences))
 
 
 class WebSummaryWorkflow(Workflow[WebSummaryState]):
@@ -105,9 +110,12 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
             llm=summary_node_llm,
             template_name=summary_node_config.template_name,
         )
+        # TODO: close session
+        session = aiohttp.ClientSession()
+        crawl_url_node = partial(cls.__crawl_url_node, session=session)
         graph = (
             cls._graph_builder(state_schema=WebSummaryState)
-            .add_node('crawl_url_node', cls.__crawl_url_node)
+            .add_node('crawl_url_node', crawl_url_node)
             .add_node('parse_node', cls.__parse_node)
             .add_node('summary_node', summary_node_with_llm)
             .add_edge(START, 'crawl_url_node')
@@ -135,12 +143,13 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
         return ['parse_node']
 
     @staticmethod
-    async def __crawl_url_node(state: WebSummaryState) -> dict:
+    async def __crawl_url_node(state: WebSummaryState, session: aiohttp.ClientSession) -> dict:
         """Crawl url and return HTML.
         Args:
             state   (WebSummaryState): {
                 "url": ...,
             }
+            session (aiohttp.ClientSession)
         Returns:
             success (dict): {
                 "html_document": ...,
@@ -150,10 +159,13 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
                 "error_message": ...,
             }
         """
+        if not isinstance(session, aiohttp.ClientSession):
+            err_msg: str = f'session should be aiohttp.ClientSession type: {session:r}'
+            raise TypeError(err_msg)
         try:
-            async with aiohttp.ClientSession() as session, session.get(str(state.url)) as resp:
+            async with session.get(str(state.url)) as resp:
                 if not resp.ok:
-                    err_msg: str = f'Please check the given url: {state.url}'
+                    err_msg = f'Please check the given url: {state.url}'
                     resp_info: str = f"""
                     URL: {state.url}
                     HEADER: {resp.headers}
@@ -187,7 +199,7 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
                 "document": ...
             }
         """
-        soup = BeautifulSoup(state.html_document, 'html.parser')  # type: ignore
+        soup = BeautifulSoup(state.html_document, 'lxml')  # type: ignore
         if (title_tag := soup.find('title')) is not None:
             title = title_tag.get_text().strip()
         if (content_tag := soup.find('body')) is not None:
@@ -196,16 +208,17 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
             content = 'Empty document'
 
         # Cut maximum tokens
-        encoder = tiktoken.get_encoding('o200k_base')  # gpt-4o, gpt-4o-mini tokenizer
-        max_tokens = 20_000
-        encoded_content: list[int] = encoder.encode(content)
-        is_end: bool = len(encoded_content) <= max_tokens
-        content = encoder.decode(encoded_content[:max_tokens])
+        chunk_size: int = 700
+        middle_idx: int = len(content) // 2
+
+        first_chunk = content[:chunk_size]
+        second_chunk = content[middle_idx - chunk_size // 2 : middle_idx + chunk_size // 2]
+        last_chunk = content[-chunk_size:]
+        chunks: list[str] = [first_chunk, second_chunk, last_chunk]
 
         document: SummaryNodeDocument = {
             'title': title,
-            'content': content,
-            'is_end': is_end,
+            'chunks': chunks,
         }
         return {
             'document': document,
@@ -217,7 +230,7 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
         Args:
             state    (WebSummaryState): {
                 "url": ...,
-                "html_document": ...,
+                "document": ...,
             }
             llm        (BaseChatModel): LLM for answer node
             template_name (str | None): Prompt Template name
@@ -249,3 +262,110 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
         return {
             'summary': answer.summary,
         }
+
+
+class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
+    @classmethod
+    @override
+    def get_instance(cls, config: dict[str, WorkflowNodeConfig], memory: MemoryType | None = None) -> Self:
+        qa_workflow: QAWorkflow = QAWorkflow.get_instance(config=config, memory=memory)
+        web_summary_workflow: WebSummaryWorkflow = WebSummaryWorkflow.get_instance(config=config, memory=memory)
+
+        qa_node = partial(cls.__qa_node, workflow=qa_workflow)
+        web_summary_node = partial(cls.__web_summary_node, workflow=web_summary_workflow)
+        graph = (
+            cls._graph_builder(QAWithWebSummaryState)
+            .add_node('qa_node', qa_node)
+            .add_node('web_summary_node', web_summary_node)
+            .add_conditional_edges(START, cls.__route_workflows, ['qa_node', 'web_summary_node'])
+            .add_edge('qa_node', END)
+            .add_edge('web_summary_node', 'qa_node')
+            .compile(checkpointer=memory)
+        )
+        return cls(compiled_graph=graph, state_schema=QAWithWebSummaryState)
+
+    @staticmethod
+    async def __route_workflows(state: QAWithWebSummaryState) -> list[str]:
+        """Route workflows
+
+        Args:
+            state (QAWithWebSummaryState): {
+                "question": ...,
+            }
+
+        Returns:
+            list[str]: Next nodes
+        """
+        if QAWithWebSummaryWorkflow.__extract_url(state.question) is None:
+            return ['qa_node']
+        return ['web_summary_node']
+
+    @staticmethod
+    async def __qa_node(state: QAWithWebSummaryState, workflow: QAWorkflow) -> dict:
+        """Invoke QAWorkflow and return result.
+
+        Args:
+            state (QAWithWebSummaryState): {
+                "question": ...,
+                "context": ...,
+            }
+            workflow (QAWorkflow): QAWorkflowImpl
+
+        Returns:
+            dict: {
+                "answer": ...,
+            }
+        """
+        if not isinstance(workflow, QAWorkflow):
+            err_msg: str = f'workflow should be QAWorkflow: {workflow!r}'
+            raise TypeError(err_msg)
+
+        qa_state: QAState = QAState(question=state.question, context=state.context, messages=state.messages)  # type: ignore
+        response: QAState = await workflow.ainvoke(qa_state)
+        return {
+            'answer': response.answer,
+        }
+
+    @staticmethod
+    async def __web_summary_node(state: QAWithWebSummaryState, workflow: WebSummaryWorkflow) -> dict:
+        """Invoke WebSummaryWorkflow and return result.
+
+        Args:
+            state (QAWithWebSummaryState): {
+                "question": ...,
+            }
+            workflow (WebSummaryWorkflow): WebSummaryWorkflowImpl
+
+        Returns:
+            dict: {
+                "context": ...,
+            }
+        """
+        if not isinstance(workflow, WebSummaryWorkflow):
+            err_msg: str = f'workflow should be WebSummaryWorkflow: {workflow!r}'
+            raise TypeError(err_msg)
+
+        url = QAWithWebSummaryWorkflow.__extract_url(state.question)
+        web_summary_state: WebSummaryState = WebSummaryState(url=url)  # type: ignore
+        response: WebSummaryState = await workflow.ainvoke(web_summary_state)
+
+        return {'context': response.summary or response.error_message}
+
+    @staticmethod
+    def __extract_url(question: str | None) -> str | None:
+        """Extract url from question
+
+        Args:
+            question (str | None): raw question
+
+        Returns:
+            str | None: url or None
+        """
+        if not isinstance(question, str):
+            err_msg: str = f'question should be str: {question}'
+            logger.warning(err_msg)
+            return None
+        pattern: str = '(https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*))'
+        if (matched := re.search(pattern, question, re.DOTALL | re.IGNORECASE)) is not None:
+            return matched.group(1)
+        return None

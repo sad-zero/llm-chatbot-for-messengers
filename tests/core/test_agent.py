@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pytest
+from llm_chatbot_for_messengers.core.configuration import AgentConfig, AgentExtraConfig, WorkflowNodeConfig
 from llm_chatbot_for_messengers.core.entity.agent import QAAgentImpl
 from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
-from llm_chatbot_for_messengers.core.vo import AgentConfig, AgentExtraConfig, UserId, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.vo import UserId
 
 
 @pytest.mark.parametrize(

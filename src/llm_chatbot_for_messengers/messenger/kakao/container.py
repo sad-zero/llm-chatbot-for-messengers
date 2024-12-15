@@ -4,10 +4,10 @@ from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 from fastapi import FastAPI
 
+from llm_chatbot_for_messengers.core.configuration import AgentConfig, LLMConfig
 from llm_chatbot_for_messengers.core.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.core.output.dao import InMemoryMessengerDaoImpl, MessengerDao
 from llm_chatbot_for_messengers.core.output.memory import VolatileMemoryManager
-from llm_chatbot_for_messengers.core.vo import AgentConfig, LLMConfig
 from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
     InMemoryTokenBucketRateLimitStrategy,
     RateLimitStrategy,
@@ -20,8 +20,13 @@ class AgentContainer(containers.DeclarativeContainer):
         config=AgentConfig.builder()
         .add_node(
             node_name='answer_node',
+            template_name='kakao_v3',
+            llm_config=LLMConfig(model='gpt-4o-2024-11-20', temperature=0.52, max_tokens=200),
+        )
+        .add_node(
+            node_name='summary_node',
             template_name='kakao_v2',
-            llm_config=LLMConfig(model='gpt-4o-2024-08-06', temperature=0.52, max_tokens=200),
+            llm_config=LLMConfig(model='gpt-4o-mini-2024-07-18', temperature=0.4, max_tokens=200),
         )
         .add_fallback('미안해용. ㅠㅠ 질문이 너무 어려워용..')
         .add_memory_manager(memory_manager=VolatileMemoryManager())

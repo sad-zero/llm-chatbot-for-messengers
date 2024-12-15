@@ -11,16 +11,14 @@ from typing import TYPE_CHECKING, cast
 from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
+from llm_chatbot_for_messengers.core.configuration import AgentConfig  # noqa: TCH001
 from llm_chatbot_for_messengers.core.entity.user import User
 from llm_chatbot_for_messengers.core.error import SpecificationError
 from llm_chatbot_for_messengers.core.specification import (
     check_timeout,
 )
-from llm_chatbot_for_messengers.core.vo import (
-    AgentConfig,
-    QAState,
-)
-from llm_chatbot_for_messengers.core.workflow.qa import QAWorkflow
+from llm_chatbot_for_messengers.core.workflow.qa import QAWithWebSummaryWorkflow
+from llm_chatbot_for_messengers.core.workflow.vo import QAState
 
 if TYPE_CHECKING:
     from llm_chatbot_for_messengers.core.output.memory import MemoryType
@@ -91,7 +89,7 @@ class QAAgent(ABC):
 
 class QAAgentImpl(BaseModel, QAAgent):
     config: AgentConfig = Field(description='Agent configuration')
-    __workflow: QAWorkflow = PrivateAttr(default=None)  # type: ignore
+    __workflow: QAWithWebSummaryWorkflow = PrivateAttr(default=None)  # type: ignore
 
     @override
     async def initialize(self) -> None:
@@ -99,7 +97,7 @@ class QAAgentImpl(BaseModel, QAAgent):
             memory: MemoryType | None = await self.config.global_configs.memory_manager.acquire_memory()
         else:
             memory = None
-        self.__workflow = QAWorkflow.get_instance(config=self.config.node_configs, memory=memory)
+        self.__workflow = QAWithWebSummaryWorkflow.get_instance(config=self.config.node_configs, memory=memory)
 
     @override
     async def shutdown(self) -> None:

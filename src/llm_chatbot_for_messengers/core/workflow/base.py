@@ -8,7 +8,7 @@ from langgraph.graph import StateGraph
 from langgraph.graph.graph import CompiledGraph
 from pydantic import BaseModel
 
-from llm_chatbot_for_messengers.core.vo import LLMConfig, LLMProvider, WorkflowNodeConfig
+from llm_chatbot_for_messengers.core.configuration import LLMConfig, LLMProvider, WorkflowNodeConfig
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -27,11 +27,11 @@ class Workflow(ABC, Generic[StateSchema]):
             err_msg = f'state_schema should be subtype of BaseModel: {state_schema}'
             raise TypeError(err_msg)
 
-        self.__compiled_graph = compiled_graph
+        self._compiled_graph = compiled_graph
         self.__state_schema = state_schema
 
     async def ainvoke(self, *args, **kwargs) -> StateSchema:
-        response = await self.__compiled_graph.ainvoke(*args, **kwargs)
+        response = await self._compiled_graph.ainvoke(*args, **kwargs)
         result: StateSchema = self.__state_schema.model_validate(response)
         return result
 
