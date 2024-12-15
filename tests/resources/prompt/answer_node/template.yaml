@@ -7,6 +7,17 @@ templates:
     template: |
       Please act as a helpful question-answering agent.
   - type: human
-    input_variables: [question]
+    input_variables: [question, context, messages]
     template: |
-      my question is {quesiton}
+      my question is {quesiton}.
+      To answer the question, please refer **context** below.
+      ```context
+      {context}
+      ```
+      ---
+      If question is related previous conversations, please answer based on **conversations** below.
+      ```conversations
+      {messages}
+      ```
+      ---
+      Please do your best. Your consistent efforts will lead to outstanding achievements.

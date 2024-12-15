@@ -38,7 +38,11 @@ async def test_web_summary_workflow(url, expected):
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ('question', 'expected'),
-    [('https://en.wikipedia.org/wiki/Spider-Man는 무슨 내용이야?', 'ok'), ('된장술밥 어떻게 만들어야 돼?', 'ok')],
+    [
+        ('https://en.wikipedia.org/wiki/Spider-Man는 무슨 내용이야?', 'ok'),
+        ('된장술밥 어떻게 만들어야 돼?', 'ok'),
+        ('https://github.com/astral-sh/ruff는 언제 사용해?', 'ok'),
+    ],
 )
 async def test_qa_with_web_summary_workflow(question, expected):
     # given
@@ -46,12 +50,12 @@ async def test_qa_with_web_summary_workflow(question, expected):
         'summary_node': WorkflowNodeConfig(
             node_name='summary_node',
             template_name='test',
-            llm_config=LLMConfig(model='gpt-4o-mini-2024-07-18', max_tokens=200),
+            llm_config=LLMConfig(model='gpt-4o-mini-2024-07-18', temperature=0.4, max_tokens=100),
         ),
         'answer_node': WorkflowNodeConfig(
             node_name='answer_node',
-            template_name='kakao_v2',
-            llm_config=LLMConfig(model='gpt-4o-2024-08-06', temperature=0.52, max_tokens=200),
+            template_name='kakao_v3',
+            llm_config=LLMConfig(model='gpt-4o-2024-11-20', temperature=0.52, max_tokens=100),
         ),
     }
     workflow: QAWithWebSummaryWorkflow = QAWithWebSummaryWorkflow.get_instance(config=config)

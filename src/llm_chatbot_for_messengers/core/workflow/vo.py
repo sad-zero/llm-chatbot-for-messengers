@@ -14,8 +14,7 @@ from typing_extensions import TypedDict
 
 class SummaryNodeDocument(TypedDict):
     title: str | None
-    content: str
-    is_end: bool
+    chunks: list[str]
 
 
 class WebSummaryState(BaseModel):
@@ -32,6 +31,7 @@ class WebSummaryState(BaseModel):
 
 class QAState(BaseModel):
     question: str | None = Field(description="User's question", default=None)
+    context: str = Field(description='Context to answer the question', default='No context')
     answer: str | None = Field(description="Agent's answer", default=None)
     messages: Annotated[list[AnyMessage], add_messages] = Field(description='Chat histories', default_factory=list)
 
@@ -74,6 +74,7 @@ class QAState(BaseModel):
 
 class QAWithWebSummaryState(BaseModel):
     question: str | None = Field(description="User's question", default=None)
+    context: str | None = Field(description='Context to answer the question', default=None)
     answer: str | None = Field(description="Agent's answer", default=None)
 
 
@@ -83,7 +84,7 @@ class QAWithWebSummaryState(BaseModel):
 class AnswerNodeResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    answer: str = Field(description="Answer node's output")
+    sentences: list[str] = Field(description="Answer node's output")
 
 
 class SummaryNodeResponse(BaseModel):

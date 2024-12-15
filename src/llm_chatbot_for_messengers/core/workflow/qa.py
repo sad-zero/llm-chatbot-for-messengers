@@ -6,7 +6,6 @@ from functools import partial
 from typing import TYPE_CHECKING, Self
 
 import aiohttp
-import tiktoken
 from bs4 import BeautifulSoup
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.runnables import Runnable, RunnablePassthrough
@@ -64,6 +63,7 @@ class QAWorkflow(Workflow[QAState]):
         Args:
             state            (QAState): {
                 "question": ...,
+                "context": ...,
                 "messages": ...,
             }
             llm        (BaseChatModel): LLM for answer node
@@ -78,7 +78,7 @@ class QAWorkflow(Workflow[QAState]):
             raise WorkflowError(error_msg)
 
         template = get_template(node_name='answer_node', template_name=template_name).partial(
-            messages=state.get_formatted_messages()
+            context=state.context, messages=state.get_formatted_messages()
         )
         try:
             chain: Runnable = (
@@ -95,7 +95,7 @@ class QAWorkflow(Workflow[QAState]):
             )
 
         answer: AnswerNodeResponse = await chain.ainvoke(state.question)
-        return QAState.put_answer(answer=answer.answer)
+        return QAState.put_answer(answer='\n\n'.join(answer.sentences))
 
 
 class WebSummaryWorkflow(Workflow[WebSummaryState]):
@@ -110,9 +110,11 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
             llm=summary_node_llm,
             template_name=summary_node_config.template_name,
         )
+        session = aiohttp.ClientSession()
+        crawl_url_node = partial(cls.__crawl_url_node, session=session)
         graph = (
             cls._graph_builder(state_schema=WebSummaryState)
-            .add_node('crawl_url_node', cls.__crawl_url_node)
+            .add_node('crawl_url_node', crawl_url_node)
             .add_node('parse_node', cls.__parse_node)
             .add_node('summary_node', summary_node_with_llm)
             .add_edge(START, 'crawl_url_node')
@@ -140,12 +142,13 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
         return ['parse_node']
 
     @staticmethod
-    async def __crawl_url_node(state: WebSummaryState) -> dict:
+    async def __crawl_url_node(state: WebSummaryState, session: aiohttp.ClientSession) -> dict:
         """Crawl url and return HTML.
         Args:
             state   (WebSummaryState): {
                 "url": ...,
             }
+            session (aiohttp.ClientSession)
         Returns:
             success (dict): {
                 "html_document": ...,
@@ -155,10 +158,13 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
                 "error_message": ...,
             }
         """
+        if not isinstance(session, aiohttp.ClientSession):
+            err_msg: str = f'session should be aiohttp.ClientSession type: {session:r}'
+            raise TypeError(err_msg)
         try:
-            async with aiohttp.ClientSession() as session, session.get(str(state.url)) as resp:
+            async with session.get(str(state.url)) as resp:
                 if not resp.ok:
-                    err_msg: str = f'Please check the given url: {state.url}'
+                    err_msg = f'Please check the given url: {state.url}'
                     resp_info: str = f"""
                     URL: {state.url}
                     HEADER: {resp.headers}
@@ -192,7 +198,7 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
                 "document": ...
             }
         """
-        soup = BeautifulSoup(state.html_document, 'html.parser')  # type: ignore
+        soup = BeautifulSoup(state.html_document, 'lxml')  # type: ignore
         if (title_tag := soup.find('title')) is not None:
             title = title_tag.get_text().strip()
         if (content_tag := soup.find('body')) is not None:
@@ -201,16 +207,17 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
             content = 'Empty document'
 
         # Cut maximum tokens
-        encoder = tiktoken.get_encoding('o200k_base')  # gpt-4o, gpt-4o-mini tokenizer
-        max_tokens = 10_000
-        encoded_content: list[int] = encoder.encode(content)
-        is_end: bool = len(encoded_content) <= max_tokens
-        content = encoder.decode(encoded_content[:max_tokens])
+        chunk_size: int = 700
+        middle_idx: int = len(content) // 2
+
+        first_chunk = content[:chunk_size]
+        second_chunk = content[middle_idx - chunk_size // 2 : middle_idx + chunk_size // 2]
+        last_chunk = content[-chunk_size:]
+        chunks: list[str] = [first_chunk, second_chunk, last_chunk]
 
         document: SummaryNodeDocument = {
             'title': title,
-            'content': content,
-            'is_end': is_end,
+            'chunks': chunks,
         }
         return {
             'document': document,
@@ -222,7 +229,7 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
         Args:
             state    (WebSummaryState): {
                 "url": ...,
-                "html_document": ...,
+                "document": ...,
             }
             llm        (BaseChatModel): LLM for answer node
             template_name (str | None): Prompt Template name
@@ -271,7 +278,7 @@ class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
             .add_node('web_summary_node', web_summary_node)
             .add_conditional_edges(START, cls.__route_workflows, ['qa_node', 'web_summary_node'])
             .add_edge('qa_node', END)
-            .add_edge('web_summary_node', END)
+            .add_edge('web_summary_node', 'qa_node')
             .compile()
         )
         return cls(compiled_graph=graph, state_schema=QAWithWebSummaryState)
@@ -298,7 +305,8 @@ class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
 
         Args:
             state (QAWithWebSummaryState): {
-                "question": ...
+                "question": ...,
+                "context": ...,
             }
             workflow (QAWorkflow): QAWorkflowImpl
 
@@ -311,7 +319,7 @@ class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
             err_msg: str = f'workflow should be QAWorkflow: {workflow!r}'
             raise TypeError(err_msg)
 
-        qa_state: QAState = QAState(question=state.question)
+        qa_state: QAState = QAState(question=state.question, context=state.context)  # type: ignore
         response: QAState = await workflow.ainvoke(qa_state)
         return {
             'answer': response.answer,
@@ -329,7 +337,7 @@ class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
 
         Returns:
             dict: {
-                "answer": ...,
+                "context": ...,
             }
         """
         if not isinstance(workflow, WebSummaryWorkflow):
@@ -340,7 +348,7 @@ class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
         web_summary_state: WebSummaryState = WebSummaryState(url=url)  # type: ignore
         response: WebSummaryState = await workflow.ainvoke(web_summary_state)
 
-        return {'answer': response.summary or response.error_message}
+        return {'context': response.summary or response.error_message}
 
     @staticmethod
     def __extract_url(question: str | None) -> str | None:
