@@ -6,7 +6,7 @@ from typing import Annotated, Literal, Self
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_core.messages import AnyMessage  # noqa: TCH002
 from langgraph.graph import add_messages  # noqa: TCH002
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import TypedDict
 
 # Define Workflow States
@@ -18,7 +18,7 @@ class SummaryNodeDocument(TypedDict):
 
 
 class WebSummaryState(BaseModel):
-    url: HttpUrl = Field(description='Website url')
+    url: str = Field(description='Website url')
     html_document: str | None = Field(description='HTML document crawled at url', default=None)
     document: SummaryNodeDocument | None = Field(description='Parsed document', default=None)
     error_message: str | None = Field(description='Error message', default=None)
@@ -75,6 +75,7 @@ class QAState(BaseModel):
 class QAWithWebSummaryState(BaseModel):
     question: str | None = Field(description="User's question", default=None)
     context: str | None = Field(description='Context to answer the question', default=None)
+    messages: Annotated[list[AnyMessage], add_messages] = Field(description='Chat histories', default_factory=list)
     answer: str | None = Field(description="Agent's answer", default=None)
 
 

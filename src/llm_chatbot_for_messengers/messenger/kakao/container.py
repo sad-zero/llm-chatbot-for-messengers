@@ -20,8 +20,13 @@ class AgentContainer(containers.DeclarativeContainer):
         config=AgentConfig.builder()
         .add_node(
             node_name='answer_node',
+            template_name='kakao_v3',
+            llm_config=LLMConfig(model='gpt-4o-2024-11-20', temperature=0.52, max_tokens=200),
+        )
+        .add_node(
+            node_name='summary_node',
             template_name='kakao_v2',
-            llm_config=LLMConfig(model='gpt-4o-2024-08-06', temperature=0.52, max_tokens=200),
+            llm_config=LLMConfig(model='gpt-4o-mini-2024-07-18', temperature=0.4, max_tokens=200),
         )
         .add_fallback('미안해용. ㅠㅠ 질문이 너무 어려워용..')
         .add_memory_manager(memory_manager=VolatileMemoryManager())

@@ -23,7 +23,7 @@ async def test_web_summary_workflow(url, expected):
         )
     }
     workflow: WebSummaryWorkflow = WebSummaryWorkflow.get_instance(config=config)
-    state = WebSummaryState(url=url)  # type: ignore
+    state = WebSummaryState(url=url)
     # when
     result: WebSummaryState = await asyncio.wait_for(workflow.ainvoke(state), timeout=4)
     # then

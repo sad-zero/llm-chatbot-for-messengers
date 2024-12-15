@@ -110,6 +110,7 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
             llm=summary_node_llm,
             template_name=summary_node_config.template_name,
         )
+        # TODO: close session
         session = aiohttp.ClientSession()
         crawl_url_node = partial(cls.__crawl_url_node, session=session)
         graph = (
@@ -279,7 +280,7 @@ class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
             .add_conditional_edges(START, cls.__route_workflows, ['qa_node', 'web_summary_node'])
             .add_edge('qa_node', END)
             .add_edge('web_summary_node', 'qa_node')
-            .compile()
+            .compile(checkpointer=memory)
         )
         return cls(compiled_graph=graph, state_schema=QAWithWebSummaryState)
 
@@ -319,7 +320,7 @@ class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
             err_msg: str = f'workflow should be QAWorkflow: {workflow!r}'
             raise TypeError(err_msg)
 
-        qa_state: QAState = QAState(question=state.question, context=state.context)  # type: ignore
+        qa_state: QAState = QAState(question=state.question, context=state.context, messages=state.messages)  # type: ignore
         response: QAState = await workflow.ainvoke(qa_state)
         return {
             'answer': response.answer,
