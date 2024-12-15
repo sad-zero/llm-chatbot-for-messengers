@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from functools import partial
 from typing import TYPE_CHECKING, Self
 
@@ -16,11 +17,13 @@ from llm_chatbot_for_messengers.core.configuration import (
     WorkflowNodeConfig,
 )
 from llm_chatbot_for_messengers.core.error import WorkflowError
+from llm_chatbot_for_messengers.core.output.memory import MemoryType
 from llm_chatbot_for_messengers.core.output.template import get_template
 from llm_chatbot_for_messengers.core.workflow.base import Workflow
 from llm_chatbot_for_messengers.core.workflow.vo import (
     AnswerNodeResponse,
     QAState,
+    QAWithWebSummaryState,
     SummaryNodeDocument,
     SummaryNodeResponse,
     WebSummaryState,
@@ -199,7 +202,7 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
 
         # Cut maximum tokens
         encoder = tiktoken.get_encoding('o200k_base')  # gpt-4o, gpt-4o-mini tokenizer
-        max_tokens = 20_000
+        max_tokens = 10_000
         encoded_content: list[int] = encoder.encode(content)
         is_end: bool = len(encoded_content) <= max_tokens
         content = encoder.decode(encoded_content[:max_tokens])
@@ -251,3 +254,109 @@ class WebSummaryWorkflow(Workflow[WebSummaryState]):
         return {
             'summary': answer.summary,
         }
+
+
+class QAWithWebSummaryWorkflow(Workflow[QAWithWebSummaryState]):
+    @classmethod
+    @override
+    def get_instance(cls, config: dict[str, WorkflowNodeConfig], memory: MemoryType | None = None) -> Self:
+        qa_workflow: QAWorkflow = QAWorkflow.get_instance(config=config, memory=memory)
+        web_summary_workflow: WebSummaryWorkflow = WebSummaryWorkflow.get_instance(config=config, memory=memory)
+
+        qa_node = partial(cls.__qa_node, workflow=qa_workflow)
+        web_summary_node = partial(cls.__web_summary_node, workflow=web_summary_workflow)
+        graph = (
+            cls._graph_builder(QAWithWebSummaryState)
+            .add_node('qa_node', qa_node)
+            .add_node('web_summary_node', web_summary_node)
+            .add_conditional_edges(START, cls.__route_workflows, ['qa_node', 'web_summary_node'])
+            .add_edge('qa_node', END)
+            .add_edge('web_summary_node', END)
+            .compile()
+        )
+        return cls(compiled_graph=graph, state_schema=QAWithWebSummaryState)
+
+    @staticmethod
+    async def __route_workflows(state: QAWithWebSummaryState) -> list[str]:
+        """Route workflows
+
+        Args:
+            state (QAWithWebSummaryState): {
+                "question": ...,
+            }
+
+        Returns:
+            list[str]: Next nodes
+        """
+        if QAWithWebSummaryWorkflow.__extract_url(state.question) is None:
+            return ['qa_node']
+        return ['web_summary_node']
+
+    @staticmethod
+    async def __qa_node(state: QAWithWebSummaryState, workflow: QAWorkflow) -> dict:
+        """Invoke QAWorkflow and return result.
+
+        Args:
+            state (QAWithWebSummaryState): {
+                "question": ...
+            }
+            workflow (QAWorkflow): QAWorkflowImpl
+
+        Returns:
+            dict: {
+                "answer": ...,
+            }
+        """
+        if not isinstance(workflow, QAWorkflow):
+            err_msg: str = f'workflow should be QAWorkflow: {workflow!r}'
+            raise TypeError(err_msg)
+
+        qa_state: QAState = QAState(question=state.question)
+        response: QAState = await workflow.ainvoke(qa_state)
+        return {
+            'answer': response.answer,
+        }
+
+    @staticmethod
+    async def __web_summary_node(state: QAWithWebSummaryState, workflow: WebSummaryWorkflow) -> dict:
+        """Invoke WebSummaryWorkflow and return result.
+
+        Args:
+            state (QAWithWebSummaryState): {
+                "question": ...,
+            }
+            workflow (WebSummaryWorkflow): WebSummaryWorkflowImpl
+
+        Returns:
+            dict: {
+                "answer": ...,
+            }
+        """
+        if not isinstance(workflow, WebSummaryWorkflow):
+            err_msg: str = f'workflow should be WebSummaryWorkflow: {workflow!r}'
+            raise TypeError(err_msg)
+
+        url = QAWithWebSummaryWorkflow.__extract_url(state.question)
+        web_summary_state: WebSummaryState = WebSummaryState(url=url)  # type: ignore
+        response: WebSummaryState = await workflow.ainvoke(web_summary_state)
+
+        return {'answer': response.summary or response.error_message}
+
+    @staticmethod
+    def __extract_url(question: str | None) -> str | None:
+        """Extract url from question
+
+        Args:
+            question (str | None): raw question
+
+        Returns:
+            str | None: url or None
+        """
+        if not isinstance(question, str):
+            err_msg: str = f'question should be str: {question}'
+            logger.warning(err_msg)
+            return None
+        pattern: str = '(https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*))'
+        if (matched := re.search(pattern, question, re.DOTALL | re.IGNORECASE)) is not None:
+            return matched.group(1)
+        return None

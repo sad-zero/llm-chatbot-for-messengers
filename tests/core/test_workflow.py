@@ -3,8 +3,8 @@ import os
 
 import pytest
 from llm_chatbot_for_messengers.core.configuration import LLMConfig, WorkflowNodeConfig
-from llm_chatbot_for_messengers.core.workflow.qa import WebSummaryWorkflow
-from llm_chatbot_for_messengers.core.workflow.vo import WebSummaryState
+from llm_chatbot_for_messengers.core.workflow.qa import QAWithWebSummaryWorkflow, WebSummaryWorkflow
+from llm_chatbot_for_messengers.core.workflow.vo import QAWithWebSummaryState, WebSummaryState
 
 
 @pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason='API KEY cannot be used.')
@@ -32,3 +32,35 @@ async def test_web_summary_workflow(url, expected):
             assert result.summary is not None
         case 'error':
             assert result.error_message is not None
+
+
+@pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason='API KEY cannot be used.')
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ('question', 'expected'),
+    [('https://en.wikipedia.org/wiki/Spider-Man는 무슨 내용이야?', 'ok'), ('된장술밥 어떻게 만들어야 돼?', 'ok')],
+)
+async def test_qa_with_web_summary_workflow(question, expected):
+    # given
+    config = {
+        'summary_node': WorkflowNodeConfig(
+            node_name='summary_node',
+            template_name='test',
+            llm_config=LLMConfig(model='gpt-4o-mini-2024-07-18', max_tokens=200),
+        ),
+        'answer_node': WorkflowNodeConfig(
+            node_name='answer_node',
+            template_name='kakao_v2',
+            llm_config=LLMConfig(model='gpt-4o-2024-08-06', temperature=0.52, max_tokens=200),
+        ),
+    }
+    workflow: QAWithWebSummaryWorkflow = QAWithWebSummaryWorkflow.get_instance(config=config)
+    state = QAWithWebSummaryState(question=question)
+    # when
+    result: QAWithWebSummaryState = await asyncio.wait_for(workflow.ainvoke(state), timeout=4)
+    # then
+    match expected:
+        case 'ok':
+            assert result.answer is not None
+        case 'error':
+            pytest.fail('Error')

@@ -72,6 +72,11 @@ class QAState(BaseModel):
         return json.dumps(result, indent=4, ensure_ascii=False)
 
 
+class QAWithWebSummaryState(BaseModel):
+    question: str | None = Field(description="User's question", default=None)
+    answer: str | None = Field(description="Agent's answer", default=None)
+
+
 # Define LLM Response formats
 
 
