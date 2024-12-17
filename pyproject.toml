@@ -174,3 +174,12 @@ sources = ["src"]
 only-packages = true
 packages = ["src/llm_chatbot_for_messengers"]
 exclude = ["**/__about__.py"]
+
+[tool.hatch.envs.docs]
+detached = true
+
+dependencies = [
+  "mkdocs >=1.6, <1.7",
+]
+
+[tool.hatch.envs.docs.scripts]
