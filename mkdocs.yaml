@@ -16,3 +16,6 @@ theme:
   hljs_languages:
     - yaml
     - python
+plugins:
+  - search
+  - mermaid2
