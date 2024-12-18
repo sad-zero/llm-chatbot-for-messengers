@@ -6,6 +6,8 @@ from typing_extensions import override
 from llm_chatbot_for_messengers.domain.chatbot import Chatbot, logger
 from llm_chatbot_for_messengers.domain.configuration import AgentConfig
 from llm_chatbot_for_messengers.domain.messenger import User
+from llm_chatbot_for_messengers.domain.specification import ChatbotSpecification, TracingSpecification
+from llm_chatbot_for_messengers.domain.tracing import Tracing
 from llm_chatbot_for_messengers.domain.workflow.qa import QAWithWebSummaryWorkflow
 from llm_chatbot_for_messengers.domain.workflow.vo import QAState
 
@@ -57,3 +59,27 @@ class ChatbotImpl(BaseModel, Chatbot):
         log_msg: str = f'fallback: {log_info}'
         logger.warning(log_msg)
         return self.config.global_configs.fallback_message
+
+
+class ChatbotFactory:
+    async def create_chatbot(self, spec: ChatbotSpecification) -> Chatbot:
+        """Create a new chatbot
+        Args:
+            spec (ChatbotSpecification): Chatbot Specification
+        Returns:
+            Chatbot: Initialized chatbot
+        """
+        # TODO: impl
+        raise NotImplementedError
+
+
+class TracingFactory:
+    async def create_tracing(self, spec: TracingSpecification) -> Tracing:
+        """Create a new tracing
+        Args:
+            spec (TracingSpecification): Tracing Specification
+        Returns:
+            Tracing: Initialized tracing
+        """
+        # TODO: impl
+        raise NotImplementedError

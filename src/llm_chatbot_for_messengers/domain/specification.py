@@ -109,3 +109,18 @@ def check_timeout(func: Callable[..., Any], *, timeout: int) -> Callable[..., An
 class ChatbotSpecification:
     # TODO: impl
     pass
+
+
+class MessengerSpecification:
+    # TODO: impl
+    pass
+
+
+class ChatSpecification:
+    # TODO: impl
+    pass
+
+
+class TracingSpecification:
+    # TODO: impl
+    pass
