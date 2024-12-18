@@ -3,13 +3,11 @@ from typing import TYPE_CHECKING, cast
 from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
-from llm_chatbot_for_messengers.domain.chatbot import Chatbot, logger
+from llm_chatbot_for_messengers.domain.chatbot import Chatbot, QAState, QAWithWebSummaryWorkflow, logger
 from llm_chatbot_for_messengers.domain.configuration import AgentConfig
 from llm_chatbot_for_messengers.domain.messenger import User
 from llm_chatbot_for_messengers.domain.specification import ChatbotSpecification, TracingSpecification
 from llm_chatbot_for_messengers.domain.tracing import Tracing
-from llm_chatbot_for_messengers.domain.workflow.qa import QAWithWebSummaryWorkflow
-from llm_chatbot_for_messengers.domain.workflow.vo import QAState
 
 if TYPE_CHECKING:
     from llm_chatbot_for_messengers.domain.chatbot import MemoryType

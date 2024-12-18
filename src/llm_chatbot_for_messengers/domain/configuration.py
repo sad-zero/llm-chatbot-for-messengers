@@ -5,7 +5,6 @@ from typing import Annotated, Any, Self
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
-from llm_chatbot_for_messengers.domain.chatbot import MemoryManager  # noqa: TCH001
 from llm_chatbot_for_messengers.domain.specification import (  # noqa: TCH001
     check_necessary_nodes,
     check_workflow_configs,
@@ -46,9 +45,7 @@ class AgentExtraConfig(BaseModel):
 
     fallback_message: str = Field(description='Fallback message is returned when normal flows fail')
 
-    memory_manager: MemoryManager | None = Field(
-        description='Manager that control memories. None means stateless.', default=None
-    )
+    memory_manager: Any = Field(description='Manager that control memories. None means stateless.', default=None)
 
 
 class AgentConfig(BaseModel):
@@ -80,7 +77,7 @@ class AgentConfig(BaseModel):
             self.__global_configs['fallback'] = fallback_message
             return self
 
-        def add_memory_manager(self, memory_manager: MemoryManager) -> Self:
+        def add_memory_manager(self, memory_manager: Any) -> Self:
             self.__global_configs['memory_manager'] = memory_manager
             return self
 
