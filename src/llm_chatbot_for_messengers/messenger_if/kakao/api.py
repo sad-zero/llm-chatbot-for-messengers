@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Annotated
 from fastapi import Depends, FastAPI, Request, Response
 
 from llm_chatbot_for_messengers.domain.chatbot import Chatbot
-from llm_chatbot_for_messengers.domain.output.dao import MessengerDao
 from llm_chatbot_for_messengers.domain.vo import MessengerIdEnum
+from llm_chatbot_for_messengers.infra.repository.dao import MessengerDao
 from llm_chatbot_for_messengers.ioc_container.bootstrap import manage_resources
 from llm_chatbot_for_messengers.ioc_container.container import (
     get_messenger_dao,

@@ -12,12 +12,11 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langgraph.graph import END, START
 from typing_extensions import override
 
+from llm_chatbot_for_messengers.domain.chatbot import MemoryType
 from llm_chatbot_for_messengers.domain.configuration import (
     WorkflowNodeConfig,
 )
 from llm_chatbot_for_messengers.domain.error import WorkflowError
-from llm_chatbot_for_messengers.domain.output.memory import MemoryType
-from llm_chatbot_for_messengers.domain.output.template import get_template
 from llm_chatbot_for_messengers.domain.workflow.base import Workflow
 from llm_chatbot_for_messengers.domain.workflow.vo import (
     AnswerNodeResponse,
@@ -27,11 +26,12 @@ from llm_chatbot_for_messengers.domain.workflow.vo import (
     SummaryNodeResponse,
     WebSummaryState,
 )
+from llm_chatbot_for_messengers.infra.repository.template import get_template
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
 
-    from llm_chatbot_for_messengers.domain.output.memory import MemoryType
+    from llm_chatbot_for_messengers.infra.repository.memory import MemoryType
 
 logger = logging.getLogger(__name__)
 

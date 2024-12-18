@@ -2,20 +2,13 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, cast
+from typing import TypeAlias
 
-from pydantic import BaseModel, Field, PrivateAttr
-from typing_extensions import override
+from langgraph.checkpoint.base import BaseCheckpointSaver
 
-from llm_chatbot_for_messengers.domain.configuration import AgentConfig  # noqa: TCH001
 from llm_chatbot_for_messengers.domain.error import SpecificationError
 from llm_chatbot_for_messengers.domain.messenger import User
 from llm_chatbot_for_messengers.domain.specification import check_timeout
-from llm_chatbot_for_messengers.domain.workflow.qa import QAWithWebSummaryWorkflow
-from llm_chatbot_for_messengers.domain.workflow.vo import QAState
-
-if TYPE_CHECKING:
-    from llm_chatbot_for_messengers.domain.output.memory import MemoryType
 
 logger = logging.getLogger(__name__)
 
@@ -80,47 +73,14 @@ class Chatbot(ABC):
         """
 
 
-class ChatbotImpl(BaseModel, Chatbot):
-    config: AgentConfig = Field(description='Agent configuration')
-    __workflow: QAWithWebSummaryWorkflow = PrivateAttr(default=None)  # type: ignore
+MemoryType: TypeAlias = BaseCheckpointSaver
 
-    @override
-    async def initialize(self) -> None:
-        if self.config.global_configs.memory_manager is not None:
-            memory: MemoryType | None = await self.config.global_configs.memory_manager.acquire_memory()
-        else:
-            memory = None
-        self.__workflow = QAWithWebSummaryWorkflow.get_instance(config=self.config.node_configs, memory=memory)
 
-    @override
-    async def shutdown(self) -> None:
-        if self.config.global_configs.memory_manager is not None:
-            await self.config.global_configs.memory_manager.release_memory()
+class MemoryManager(ABC):
+    @abstractmethod
+    async def acquire_memory(self) -> MemoryType:
+        pass
 
-    @override
-    async def _ask(self, user: User, question: str) -> str:
-        initial: QAState = QAState.put_question(question=question)
-        response: QAState = await self.__workflow.ainvoke(
-            initial,
-            config={
-                'run_name': 'QAAgent.ask',
-                'metadata': {
-                    'user': user.model_dump(
-                        mode='python',
-                    )
-                },
-                'configurable': {'thread_id': user.user_id.user_id},
-            },
-        )  # type: ignore
-        result: str = cast(str, response.answer)
-        return result
-
-    @override
-    async def _fallback(self, user: User, question: str) -> str:
-        log_info = {
-            'user': user.model_dump(),
-            'question': question,
-        }
-        log_msg: str = f'fallback: {log_info}'
-        logger.warning(log_msg)
-        return self.config.global_configs.fallback_message
+    @abstractmethod
+    async def release_memory(self) -> None:
+        pass

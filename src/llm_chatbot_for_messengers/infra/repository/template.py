@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from langchain.prompts import BasePromptTemplate, ChatPromptTemplate
 
-from llm_chatbot_for_messengers.domain.output.parser import get_parser
+from llm_chatbot_for_messengers.infra.repository.parser import get_parser
 
 
 def get_template(node_name: str, template_name: str | None = None) -> BasePromptTemplate:

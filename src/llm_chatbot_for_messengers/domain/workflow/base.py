@@ -13,7 +13,7 @@ from llm_chatbot_for_messengers.domain.configuration import LLMConfig, LLMProvid
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
 
-    from llm_chatbot_for_messengers.domain.output.memory import MemoryType
+    from llm_chatbot_for_messengers.infra.repository.memory import MemoryType
 
 StateSchema = TypeVar('StateSchema', bound=BaseModel)
 

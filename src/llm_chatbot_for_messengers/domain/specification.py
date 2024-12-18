@@ -104,3 +104,8 @@ def check_timeout(func: Callable[..., Any], *, timeout: int) -> Callable[..., An
     if inspect.iscoroutinefunction(func):
         return awrapper
     return wrapper
+
+
+class ChatbotSpecification:
+    # TODO: impl
+    pass

@@ -1,12 +1,15 @@
 import os
+from typing import TYPE_CHECKING
 
 import pytest
-from llm_chatbot_for_messengers.domain.output.memory import (
-    MemoryManager,
-    MemoryType,
+from llm_chatbot_for_messengers.domain.chatbot import MemoryType
+from llm_chatbot_for_messengers.infra.repository.memory import (
     PersistentMemoryManager,
     VolatileMemoryManager,
 )
+
+if TYPE_CHECKING:
+    from llm_chatbot_for_messengers.domain.chatbot import MemoryManager
 
 
 @pytest.mark.asyncio

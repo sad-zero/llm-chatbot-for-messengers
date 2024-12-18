@@ -1,28 +1,18 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Annotated, AsyncGenerator, Callable, Coroutine, TypeAlias
+from typing import TYPE_CHECKING, Annotated, AsyncGenerator, Callable, Coroutine
 
-from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
 from pydantic import AfterValidator, BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
+from llm_chatbot_for_messengers.domain.chatbot import MemoryManager
 from llm_chatbot_for_messengers.domain.error import ResourceError
 
-MemoryType: TypeAlias = BaseCheckpointSaver
-
-
-class MemoryManager(ABC):
-    @abstractmethod
-    async def acquire_memory(self) -> MemoryType:
-        pass
-
-    @abstractmethod
-    async def release_memory(self) -> None:
-        pass
+if TYPE_CHECKING:
+    from llm_chatbot_for_messengers.domain.chatbot import MemoryType
 
 
 class VolatileMemoryManager(MemoryManager):
