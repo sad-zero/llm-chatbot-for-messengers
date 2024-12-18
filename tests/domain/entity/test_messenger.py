@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from llm_chatbot_for_messengers.domain.entity.messenger import Messenger
-from llm_chatbot_for_messengers.domain.entity.user import User
+from llm_chatbot_for_messengers.domain.messenger import Messenger, User
 from llm_chatbot_for_messengers.domain.vo import MessengerId, UserId
 
 

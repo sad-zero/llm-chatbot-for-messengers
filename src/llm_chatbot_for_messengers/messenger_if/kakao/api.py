@@ -16,7 +16,7 @@ from llm_chatbot_for_messengers.messenger_if.kakao.vo import ChatRequest, ChatRe
 from llm_chatbot_for_messengers.messenger_if.vo import MessengerRequest
 
 if TYPE_CHECKING:
-    from llm_chatbot_for_messengers.domain.entity.messenger import Messenger
+    from llm_chatbot_for_messengers.domain.messenger import Messenger
     from llm_chatbot_for_messengers.messenger_if.middleware.rate_limit import RateLimitStrategy
 
 

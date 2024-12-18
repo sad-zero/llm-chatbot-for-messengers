@@ -12,8 +12,8 @@ from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
 from llm_chatbot_for_messengers.domain.configuration import AgentConfig  # noqa: TCH001
-from llm_chatbot_for_messengers.domain.entity.user import User
 from llm_chatbot_for_messengers.domain.error import SpecificationError
+from llm_chatbot_for_messengers.domain.messenger import User
 from llm_chatbot_for_messengers.domain.specification import (
     check_timeout,
 )

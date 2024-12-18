@@ -12,8 +12,7 @@ from typing_extensions import override
 from llm_chatbot_for_messengers.domain.vo import MessengerId  # noqa: TCH001
 
 if TYPE_CHECKING:
-    from llm_chatbot_for_messengers.domain.entity.messenger import Messenger
-    from llm_chatbot_for_messengers.domain.entity.user import User
+    from llm_chatbot_for_messengers.domain.messenger import Messenger, User
     from llm_chatbot_for_messengers.domain.vo import UserId
     from llm_chatbot_for_messengers.messenger_if.vo import MessengerRequest
 

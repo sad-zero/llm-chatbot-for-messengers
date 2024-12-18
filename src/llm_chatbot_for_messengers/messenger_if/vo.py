@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from llm_chatbot_for_messengers.domain.entity.messenger import Messenger  # noqa: TCH001
-from llm_chatbot_for_messengers.domain.entity.user import User  # noqa: TCH001
+from llm_chatbot_for_messengers.domain.messenger import (
+    Messenger,  # noqa: TCH001
+    User,  # noqa: TCH001
+)
 
 
 class MessengerRequest(BaseModel):

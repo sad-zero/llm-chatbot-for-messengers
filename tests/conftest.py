@@ -1,7 +1,7 @@
 import pytest
 from llm_chatbot_for_messengers.domain.entity.agent import QAAgent
-from llm_chatbot_for_messengers.domain.entity.user import User
 from llm_chatbot_for_messengers.domain.error import SpecificationError
+from llm_chatbot_for_messengers.domain.messenger import User
 from typing_extensions import override
 
 
