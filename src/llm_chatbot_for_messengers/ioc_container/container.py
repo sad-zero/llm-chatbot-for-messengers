@@ -1,14 +1,11 @@
-from contextlib import asynccontextmanager
-
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
-from fastapi import FastAPI
 
 from llm_chatbot_for_messengers.domain.configuration import AgentConfig, LLMConfig
 from llm_chatbot_for_messengers.domain.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.domain.output.dao import InMemoryMessengerDaoImpl, MessengerDao
 from llm_chatbot_for_messengers.domain.output.memory import VolatileMemoryManager
-from llm_chatbot_for_messengers.messenger.middleware.rate_limit import (
+from llm_chatbot_for_messengers.messenger_if.middleware.rate_limit import (
     InMemoryTokenBucketRateLimitStrategy,
     RateLimitStrategy,
 )
@@ -47,60 +44,6 @@ class MiddlewareContainer(containers.DeclarativeContainer):
         limit=100,
         period=86400,  # 1 day
     )
-
-
-@asynccontextmanager
-async def manage_resources(app: FastAPI):  # noqa: ARG001
-    agent_container = AgentContainer()
-    middleware_container = MiddlewareContainer()
-    dao_container = DaoContainer()
-
-    await _initialize(agent_container, middleware_container, dao_container)
-    yield
-    await _release(agent_container, middleware_container, dao_container)
-
-
-async def _initialize(
-    agent_container: AgentContainer, middleware_container: MiddlewareContainer, dao_container: DaoContainer
-):
-    agent_container.check_dependencies()
-    qa_agent = agent_container.qa_agent()
-    await qa_agent.initialize()
-
-    agent_container.wire(
-        modules=[
-            'llm_chatbot_for_messengers.messenger.kakao.container',
-        ]
-    )
-
-    middleware_container.check_dependencies()
-    middleware_container.wire(
-        modules=[
-            'llm_chatbot_for_messengers.messenger.kakao.container',
-        ]
-    )
-
-    dao_container.check_dependencies()
-    dao_container.wire(
-        modules=[
-            'llm_chatbot_for_messengers.messenger.kakao.container',
-        ]
-    )
-
-
-async def _release(
-    agent_container: AgentContainer, middleware_container: MiddlewareContainer, dao_container: DaoContainer
-):
-    qa_agent = agent_container.qa_agent()
-    await qa_agent.shutdown()
-    agent_container.unwire()
-    agent_container.reset_singletons()
-
-    middleware_container.unwire()
-    middleware_container.reset_singletons()
-
-    dao_container.unwire()
-    dao_container.reset_singletons()
 
 
 _qa_agent: QAAgent = Provide[AgentContainer.qa_agent]

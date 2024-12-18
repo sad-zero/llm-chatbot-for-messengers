@@ -4,8 +4,8 @@ import pytest
 from llm_chatbot_for_messengers.domain.entity.messenger import Messenger
 from llm_chatbot_for_messengers.domain.entity.user import User
 from llm_chatbot_for_messengers.domain.vo import MessengerId, UserId
-from llm_chatbot_for_messengers.messenger.middleware.rate_limit import InMemoryTokenBucketRateLimitStrategy
-from llm_chatbot_for_messengers.messenger.vo import MessengerRequest
+from llm_chatbot_for_messengers.messenger_if.middleware.rate_limit import InMemoryTokenBucketRateLimitStrategy
+from llm_chatbot_for_messengers.messenger_if.vo import MessengerRequest
 
 
 @pytest.mark.asyncio

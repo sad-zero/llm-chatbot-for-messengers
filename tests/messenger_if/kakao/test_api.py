@@ -1,6 +1,6 @@
-from llm_chatbot_for_messengers.messenger.kakao.api import app
-from llm_chatbot_for_messengers.messenger.kakao.container import get_qa_agent
-from llm_chatbot_for_messengers.messenger.kakao.vo import ChatResponse
+from llm_chatbot_for_messengers.ioc_container.container import get_qa_agent
+from llm_chatbot_for_messengers.messenger_if.kakao.api import app
+from llm_chatbot_for_messengers.messenger_if.kakao.vo import ChatResponse
 
 
 def test_chat(client, fake_agent):

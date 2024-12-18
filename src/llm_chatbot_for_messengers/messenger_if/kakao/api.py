@@ -6,18 +6,18 @@ from fastapi import Depends, FastAPI, Request, Response
 from llm_chatbot_for_messengers.domain.entity.agent import QAAgent
 from llm_chatbot_for_messengers.domain.output.dao import MessengerDao
 from llm_chatbot_for_messengers.domain.vo import MessengerIdEnum
-from llm_chatbot_for_messengers.messenger.kakao.container import (
+from llm_chatbot_for_messengers.ioc_container.bootstrap import manage_resources
+from llm_chatbot_for_messengers.ioc_container.container import (
     get_messenger_dao,
     get_qa_agent,
     get_rate_limit_strategy,
-    manage_resources,
 )
-from llm_chatbot_for_messengers.messenger.kakao.vo import ChatRequest, ChatResponse, ChatTemplate, SimpleTextOutput
-from llm_chatbot_for_messengers.messenger.vo import MessengerRequest
+from llm_chatbot_for_messengers.messenger_if.kakao.vo import ChatRequest, ChatResponse, ChatTemplate, SimpleTextOutput
+from llm_chatbot_for_messengers.messenger_if.vo import MessengerRequest
 
 if TYPE_CHECKING:
     from llm_chatbot_for_messengers.domain.entity.messenger import Messenger
-    from llm_chatbot_for_messengers.messenger.middleware.rate_limit import RateLimitStrategy
+    from llm_chatbot_for_messengers.messenger_if.middleware.rate_limit import RateLimitStrategy
 
 
 logging.basicConfig(level=logging.INFO)
