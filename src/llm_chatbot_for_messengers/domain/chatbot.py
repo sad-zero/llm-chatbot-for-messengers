@@ -20,10 +20,9 @@ from langgraph.graph.graph import CompiledGraph
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import TypedDict, override
 
-from llm_chatbot_for_messengers.domain.configuration import LLMConfig, LLMProvider, WorkflowNodeConfig
 from llm_chatbot_for_messengers.domain.error import SpecificationError, WorkflowError
 from llm_chatbot_for_messengers.domain.messenger import User
-from llm_chatbot_for_messengers.domain.specification import check_timeout
+from llm_chatbot_for_messengers.domain.specification import LLMConfig, LLMProvider, WorkflowNodeConfig, check_timeout
 from llm_chatbot_for_messengers.infra.repository.template import get_template
 
 if TYPE_CHECKING:

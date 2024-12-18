@@ -4,9 +4,8 @@ from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
 from llm_chatbot_for_messengers.domain.chatbot import Chatbot, QAState, QAWithWebSummaryWorkflow, logger
-from llm_chatbot_for_messengers.domain.configuration import AgentConfig
 from llm_chatbot_for_messengers.domain.messenger import User
-from llm_chatbot_for_messengers.domain.specification import ChatbotSpecification, TracingSpecification
+from llm_chatbot_for_messengers.domain.specification import AgentConfig, ChatbotSpecification, TracingSpecification
 from llm_chatbot_for_messengers.domain.tracing import Tracing
 
 if TYPE_CHECKING:

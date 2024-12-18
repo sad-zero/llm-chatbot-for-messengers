@@ -8,7 +8,7 @@ from llm_chatbot_for_messengers.domain.chatbot import (
     WebSummaryState,
     WebSummaryWorkflow,
 )
-from llm_chatbot_for_messengers.domain.configuration import LLMConfig, WorkflowNodeConfig
+from llm_chatbot_for_messengers.domain.specification import LLMConfig, WorkflowNodeConfig
 
 
 @pytest.mark.skipif(os.getenv('GITHUB_ACTIONS') == 'true', reason='API KEY cannot be used.')

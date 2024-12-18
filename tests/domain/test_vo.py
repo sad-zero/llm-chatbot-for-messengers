@@ -1,5 +1,5 @@
 import pytest
-from llm_chatbot_for_messengers.domain.configuration import AgentConfig, AgentExtraConfig, LLMConfig, WorkflowNodeConfig
+from llm_chatbot_for_messengers.domain.specification import AgentConfig, AgentExtraConfig, LLMConfig, WorkflowNodeConfig
 from llm_chatbot_for_messengers.domain.vo import UserId
 from llm_chatbot_for_messengers.infra.repository.memory import VolatileMemoryManager
 from pydantic import ValidationError
