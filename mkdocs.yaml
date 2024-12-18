@@ -5,6 +5,9 @@ copyright: MIT
 repo_url: https://github.com/sad-zero/llm-chatbot-for-messengers
 nav:
   - Home: index.md
+  - Design:
+    - Current: design/current.md
+    - Future: design/future.md
   - About:
     - License: about/license.md
 theme:
