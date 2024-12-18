@@ -5,8 +5,8 @@ from abc import ABC, abstractmethod
 from typing_extensions import override
 
 from llm_chatbot_for_messengers.domain.error import DataError
-from llm_chatbot_for_messengers.domain.messenger import Messenger
-from llm_chatbot_for_messengers.domain.vo import MessengerId, MessengerIdEnum
+from llm_chatbot_for_messengers.domain.messenger import Messenger, MessengerId
+from llm_chatbot_for_messengers.domain.specification import MessengerIdEnum
 
 
 class MessengerDao(ABC):

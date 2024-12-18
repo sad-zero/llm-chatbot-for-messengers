@@ -9,11 +9,10 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
-from llm_chatbot_for_messengers.domain.vo import MessengerId  # noqa: TCH001
+from llm_chatbot_for_messengers.domain.messenger import MessengerId  # noqa: TCH001
 
 if TYPE_CHECKING:
-    from llm_chatbot_for_messengers.domain.messenger import Messenger, User
-    from llm_chatbot_for_messengers.domain.vo import UserId
+    from llm_chatbot_for_messengers.domain.messenger import Messenger, User, UserId
     from llm_chatbot_for_messengers.messenger_if.vo import MessengerRequest
 
 logger = logging.getLogger(__name__)

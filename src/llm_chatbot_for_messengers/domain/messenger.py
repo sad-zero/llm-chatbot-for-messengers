@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, PrivateAttr
+from typing import Self
 
-from llm_chatbot_for_messengers.domain.vo import MessengerId, UserId  # noqa: TCH001
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 
 class Messenger(BaseModel):
@@ -38,7 +38,35 @@ class Messenger(BaseModel):
         return tuple(registered)
 
 
+class UserId(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_seq: int | None = Field(description="User's sequence", default=None)
+    user_id: str | None = Field(description="User's unique string", default=None)
+
+    @model_validator(mode='after')
+    def check_id(self) -> Self:
+        if (self.user_seq, self.user_id) == (None, None):
+            err_msg: str = 'One of id or seq should exist.'
+            raise ValueError(err_msg)
+        return self
+
+
 class User(BaseModel):
     messenger_id: MessengerId | None = Field(description="Messenger's Id", default=None)
     user_id: UserId = Field(description="User's Unique Id")
     user_name: str | None = Field(description="User's name", default=None)
+
+
+class MessengerId(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    messenger_seq: int | None = Field(description="Messenger's sequence", default=None)
+    messenger_id: str | None = Field(description="Messenger's unique string", default=None)
+
+    @model_validator(mode='after')
+    def check_id(self) -> Self:
+        if (self.messenger_seq, self.messenger_id) == (None, None):
+            err_msg: str = 'One of id or seq should exist.'
+            raise ValueError(err_msg)
+        return self

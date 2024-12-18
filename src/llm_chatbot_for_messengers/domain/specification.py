@@ -15,6 +15,7 @@ from typing import Annotated, Any, Callable, Self
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from llm_chatbot_for_messengers.domain.error import SpecificationError
+from llm_chatbot_for_messengers.domain.messenger import MessengerId
 
 
 def check_timeout(func: Callable[..., Any], *, timeout: int) -> Callable[..., Any]:
@@ -204,3 +205,8 @@ class WorkflowNodeConfig(BaseModel):
     node_name: str = Field(description='Workflow node name')
     template_name: str | None = Field(description='Workflow node prompt template name', default=None)
     llm_config: LLMConfig = Field(description="Workflow node's LLM Config", default_factory=LLMConfig)
+
+
+@unique
+class MessengerIdEnum(Enum):
+    KAKAO = MessengerId(messenger_seq=1, messenger_id='kakao')

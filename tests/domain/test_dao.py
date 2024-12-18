@@ -1,5 +1,5 @@
 import pytest
-from llm_chatbot_for_messengers.domain.vo import MessengerIdEnum
+from llm_chatbot_for_messengers.domain.specification import MessengerIdEnum
 from llm_chatbot_for_messengers.infra.repository.dao import InMemoryMessengerDaoImpl
 
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from llm_chatbot_for_messengers.domain.messenger import Messenger, User
-from llm_chatbot_for_messengers.domain.vo import MessengerId, UserId
+from llm_chatbot_for_messengers.domain.messenger import Messenger, MessengerId, User, UserId
 
 
 def test_messenger_register():
