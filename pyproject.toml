@@ -184,3 +184,4 @@ dependencies = [
 ]
 
 [tool.hatch.envs.docs.scripts]
+read = "mkdocs serve -o --no-livereload"
