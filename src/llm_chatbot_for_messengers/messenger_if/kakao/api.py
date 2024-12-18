@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends, FastAPI, Request, Response
 
-from llm_chatbot_for_messengers.domain.entity.agent import QAAgent
+from llm_chatbot_for_messengers.domain.chatbot import Chatbot
 from llm_chatbot_for_messengers.domain.output.dao import MessengerDao
 from llm_chatbot_for_messengers.domain.vo import MessengerIdEnum
 from llm_chatbot_for_messengers.ioc_container.bootstrap import manage_resources
@@ -29,7 +29,7 @@ app = FastAPI(title='Kakao LLM Chatbot', lifespan=manage_resources)
 @app.post('/kakao/v1/chat', response_model=None)
 async def chat(
     body: ChatRequest,
-    qa_agent: Annotated[QAAgent, Depends(get_qa_agent)],
+    qa_agent: Annotated[Chatbot, Depends(get_qa_agent)],
     messenger_dao: Annotated[MessengerDao, Depends(get_messenger_dao)],
 ) -> ChatResponse:
     messenger: Messenger = await messenger_dao.get_messenger(MessengerIdEnum.KAKAO.value)

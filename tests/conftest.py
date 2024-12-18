@@ -1,15 +1,15 @@
 import pytest
-from llm_chatbot_for_messengers.domain.entity.agent import QAAgent
+from llm_chatbot_for_messengers.domain.chatbot import Chatbot
 from llm_chatbot_for_messengers.domain.error import SpecificationError
 from llm_chatbot_for_messengers.domain.messenger import User
 from typing_extensions import override
 
 
 @pytest.fixture
-def fake_agent() -> QAAgent:
+def fake_agent() -> Chatbot:
     """QAAgent with FakeLLM"""
 
-    class FakeQAAgent(QAAgent):
+    class FakeQAAgent(Chatbot):
         @override
         async def initialize(self):
             pass
@@ -34,10 +34,10 @@ def fake_agent() -> QAAgent:
 
 
 @pytest.fixture
-def fake_agent_fallback() -> QAAgent:
+def fake_agent_fallback() -> Chatbot:
     """QAAgent with FakeLLM"""
 
-    class FakeQAAgent(QAAgent):
+    class FakeQAAgent(Chatbot):
         @override
         async def initialize(self):
             pass

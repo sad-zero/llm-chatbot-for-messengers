@@ -1,8 +1,8 @@
 from dependency_injector import containers, providers
 from dependency_injector.wiring import Provide, inject
 
+from llm_chatbot_for_messengers.domain.chatbot import Chatbot, ChatbotImpl
 from llm_chatbot_for_messengers.domain.configuration import AgentConfig, LLMConfig
-from llm_chatbot_for_messengers.domain.entity.agent import QAAgent, QAAgentImpl
 from llm_chatbot_for_messengers.domain.output.dao import InMemoryMessengerDaoImpl, MessengerDao
 from llm_chatbot_for_messengers.domain.output.memory import VolatileMemoryManager
 from llm_chatbot_for_messengers.messenger_if.middleware.rate_limit import (
@@ -12,8 +12,8 @@ from llm_chatbot_for_messengers.messenger_if.middleware.rate_limit import (
 
 
 class AgentContainer(containers.DeclarativeContainer):
-    qa_agent: providers.Singleton[QAAgent] = providers.ThreadSafeSingleton(
-        QAAgentImpl,
+    qa_agent: providers.Singleton[Chatbot] = providers.ThreadSafeSingleton(
+        ChatbotImpl,
         config=AgentConfig.builder()
         .add_node(
             node_name='answer_node',
@@ -46,10 +46,10 @@ class MiddlewareContainer(containers.DeclarativeContainer):
     )
 
 
-_qa_agent: QAAgent = Provide[AgentContainer.qa_agent]
+_qa_agent: Chatbot = Provide[AgentContainer.qa_agent]
 
 
-def get_qa_agent() -> QAAgent:
+def get_qa_agent() -> Chatbot:
     return _qa_agent
 
 

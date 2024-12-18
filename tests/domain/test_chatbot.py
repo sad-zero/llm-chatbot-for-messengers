@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
+from llm_chatbot_for_messengers.domain.chatbot import ChatbotImpl
 from llm_chatbot_for_messengers.domain.configuration import AgentConfig, AgentExtraConfig, WorkflowNodeConfig
-from llm_chatbot_for_messengers.domain.entity.agent import QAAgentImpl
 from llm_chatbot_for_messengers.domain.messenger import User
 from llm_chatbot_for_messengers.domain.output.memory import VolatileMemoryManager
 from llm_chatbot_for_messengers.domain.vo import UserId
@@ -38,13 +38,13 @@ def test_create_qa_agent(
 ):
     if expected == 'ok':
         # when
-        assert QAAgentImpl(config=AgentConfig(node_configs=workflow_configs, global_configs=global_configs)) is not None
+        assert ChatbotImpl(config=AgentConfig(node_configs=workflow_configs, global_configs=global_configs)) is not None
         # then
     else:
         # when
         # then
         with pytest.raises(RuntimeError):
-            assert QAAgentImpl(config=AgentConfig(node_configs=workflow_configs, global_configs=global_configs))
+            assert ChatbotImpl(config=AgentConfig(node_configs=workflow_configs, global_configs=global_configs))
 
 
 @pytest.mark.asyncio
