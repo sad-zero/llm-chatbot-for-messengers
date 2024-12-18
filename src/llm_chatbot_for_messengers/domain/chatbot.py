@@ -5,7 +5,7 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, Annotated, Generic, Literal, Self, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Annotated, Generic, Literal, Self, TypeVar
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -14,7 +14,6 @@ from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_core.messages import AnyMessage  # noqa: TCH002
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph, add_messages
 from langgraph.graph.graph import CompiledGraph
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,10 +22,12 @@ from typing_extensions import TypedDict, override
 from llm_chatbot_for_messengers.domain.error import SpecificationError, WorkflowError
 from llm_chatbot_for_messengers.domain.messenger import User
 from llm_chatbot_for_messengers.domain.specification import LLMConfig, LLMProvider, WorkflowNodeConfig, check_timeout
-from llm_chatbot_for_messengers.infra.repository.template import get_template
+from llm_chatbot_for_messengers.infra.chatbot import get_template
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
+
+    from llm_chatbot_for_messengers.domain.repository import MemoryType
 
 logger = logging.getLogger(__name__)
 
@@ -89,19 +90,6 @@ class Chatbot(ABC):
         Returns:
             str: Static fallback message
         """
-
-
-MemoryType: TypeAlias = BaseCheckpointSaver
-
-
-class MemoryManager(ABC):
-    @abstractmethod
-    async def acquire_memory(self) -> MemoryType:
-        pass
-
-    @abstractmethod
-    async def release_memory(self) -> None:
-        pass
 
 
 StateSchema = TypeVar('StateSchema', bound=BaseModel)

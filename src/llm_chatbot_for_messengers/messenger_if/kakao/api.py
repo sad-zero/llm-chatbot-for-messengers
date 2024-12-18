@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, Request, Response
 
 from llm_chatbot_for_messengers.domain.chatbot import Chatbot
 from llm_chatbot_for_messengers.domain.specification import MessengerIdEnum
-from llm_chatbot_for_messengers.infra.repository.dao import MessengerDao
+from llm_chatbot_for_messengers.infra.messenger import MessengerDao
 from llm_chatbot_for_messengers.ioc_container.bootstrap import manage_resources
 from llm_chatbot_for_messengers.ioc_container.container import (
     get_messenger_dao,

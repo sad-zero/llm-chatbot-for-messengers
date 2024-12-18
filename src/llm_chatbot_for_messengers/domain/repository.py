@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
+
+from langgraph.checkpoint.base import BaseCheckpointSaver
 
 if TYPE_CHECKING:
     from llm_chatbot_for_messengers.domain.chatbot import Chatbot
@@ -25,4 +27,17 @@ class MessengerRepository(ABC):
 class TracingRepository(ABC):
     @abstractmethod
     async def add_tracing(self, tracing: Tracing) -> None:
+        pass
+
+
+MemoryType: TypeAlias = BaseCheckpointSaver
+
+
+class MemoryManager(ABC):
+    @abstractmethod
+    async def acquire_memory(self) -> MemoryType:
+        pass
+
+    @abstractmethod
+    async def release_memory(self) -> None:
         pass

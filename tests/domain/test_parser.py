@@ -1,5 +1,5 @@
 from langchain.prompts import ChatPromptTemplate
-from llm_chatbot_for_messengers.infra.repository.parser import YamlPromptTemplateParser
+from llm_chatbot_for_messengers.infra.chatbot import YamlPromptTemplateParser
 
 
 def test_yaml_parser():

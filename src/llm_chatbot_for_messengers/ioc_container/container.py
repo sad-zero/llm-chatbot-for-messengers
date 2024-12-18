@@ -4,8 +4,8 @@ from dependency_injector.wiring import Provide, inject
 from llm_chatbot_for_messengers.domain.chatbot import Chatbot
 from llm_chatbot_for_messengers.domain.factory import ChatbotImpl
 from llm_chatbot_for_messengers.domain.specification import AgentConfig, LLMConfig
-from llm_chatbot_for_messengers.infra.repository.dao import InMemoryMessengerDaoImpl, MessengerDao
-from llm_chatbot_for_messengers.infra.repository.memory import VolatileMemoryManager
+from llm_chatbot_for_messengers.infra.chatbot import VolatileMemoryManager
+from llm_chatbot_for_messengers.infra.messenger import InMemoryMessengerDaoImpl, MessengerDao
 from llm_chatbot_for_messengers.messenger_if.middleware.rate_limit import (
     InMemoryTokenBucketRateLimitStrategy,
     RateLimitStrategy,

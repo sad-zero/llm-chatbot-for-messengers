@@ -4,7 +4,7 @@ import pytest
 from llm_chatbot_for_messengers.domain.factory import ChatbotImpl
 from llm_chatbot_for_messengers.domain.messenger import User, UserId
 from llm_chatbot_for_messengers.domain.specification import AgentConfig, AgentExtraConfig, WorkflowNodeConfig
-from llm_chatbot_for_messengers.infra.repository.memory import VolatileMemoryManager
+from llm_chatbot_for_messengers.infra.chatbot import VolatileMemoryManager
 
 
 @pytest.mark.parametrize(
