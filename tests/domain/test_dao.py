@@ -1,6 +1,6 @@
 import pytest
-from llm_chatbot_for_messengers.core.output.dao import InMemoryMessengerDaoImpl
-from llm_chatbot_for_messengers.core.vo import MessengerIdEnum
+from llm_chatbot_for_messengers.domain.output.dao import InMemoryMessengerDaoImpl
+from llm_chatbot_for_messengers.domain.vo import MessengerIdEnum
 
 
 @pytest.mark.asyncio

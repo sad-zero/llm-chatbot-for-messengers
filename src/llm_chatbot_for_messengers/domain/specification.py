@@ -11,10 +11,10 @@ from functools import partial, wraps
 from threading import Thread
 from typing import TYPE_CHECKING, Any, Callable
 
-from llm_chatbot_for_messengers.core.error import SpecificationError
+from llm_chatbot_for_messengers.domain.error import SpecificationError
 
 if TYPE_CHECKING:
-    from llm_chatbot_for_messengers.core.configuration import WorkflowNodeConfig
+    from llm_chatbot_for_messengers.domain.configuration import WorkflowNodeConfig
 
 
 def check_workflow_configs(workflow_configs: dict[str, WorkflowNodeConfig]) -> dict[str, WorkflowNodeConfig]:

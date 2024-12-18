@@ -8,12 +8,12 @@ from langgraph.graph import StateGraph
 from langgraph.graph.graph import CompiledGraph
 from pydantic import BaseModel
 
-from llm_chatbot_for_messengers.core.configuration import LLMConfig, LLMProvider, WorkflowNodeConfig
+from llm_chatbot_for_messengers.domain.configuration import LLMConfig, LLMProvider, WorkflowNodeConfig
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
 
-    from llm_chatbot_for_messengers.core.output.memory import MemoryType
+    from llm_chatbot_for_messengers.domain.output.memory import MemoryType
 
 StateSchema = TypeVar('StateSchema', bound=BaseModel)
 

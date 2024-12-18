@@ -2,8 +2,8 @@ import asyncio
 import time
 
 import pytest
-from llm_chatbot_for_messengers.core.error import SpecificationError
-from llm_chatbot_for_messengers.core.specification import check_timeout
+from llm_chatbot_for_messengers.domain.error import SpecificationError
+from llm_chatbot_for_messengers.domain.specification import check_timeout
 
 
 def _normal_func(elapsed: int):

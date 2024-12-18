@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from llm_chatbot_for_messengers.core.vo import MessengerId, UserId  # noqa: TCH001
+from llm_chatbot_for_messengers.domain.vo import MessengerId, UserId  # noqa: TCH001
 
 
 class User(BaseModel):

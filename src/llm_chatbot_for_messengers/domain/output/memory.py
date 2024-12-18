@@ -10,7 +10,7 @@ from psycopg_pool import AsyncConnectionPool
 from pydantic import AfterValidator, BaseModel, Field, PrivateAttr
 from typing_extensions import override
 
-from llm_chatbot_for_messengers.core.error import ResourceError
+from llm_chatbot_for_messengers.domain.error import ResourceError
 
 MemoryType: TypeAlias = BaseCheckpointSaver
 

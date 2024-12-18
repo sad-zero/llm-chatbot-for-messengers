@@ -5,8 +5,11 @@ from typing import Annotated, Any, Self
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
-from llm_chatbot_for_messengers.core.output.memory import MemoryManager  # noqa: TCH001
-from llm_chatbot_for_messengers.core.specification import check_necessary_nodes, check_workflow_configs  # noqa: TCH001
+from llm_chatbot_for_messengers.domain.output.memory import MemoryManager  # noqa: TCH001
+from llm_chatbot_for_messengers.domain.specification import (  # noqa: TCH001
+    check_necessary_nodes,
+    check_workflow_configs,
+)
 
 
 @unique

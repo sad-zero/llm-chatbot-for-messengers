@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from llm_chatbot_for_messengers.core.output.memory import (
+from llm_chatbot_for_messengers.domain.output.memory import (
     MemoryManager,
     MemoryType,
     PersistentMemoryManager,

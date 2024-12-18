@@ -1,9 +1,9 @@
 from asyncio import sleep
 
 import pytest
-from llm_chatbot_for_messengers.core.entity.messenger import Messenger
-from llm_chatbot_for_messengers.core.entity.user import User
-from llm_chatbot_for_messengers.core.vo import MessengerId, UserId
+from llm_chatbot_for_messengers.domain.entity.messenger import Messenger
+from llm_chatbot_for_messengers.domain.entity.user import User
+from llm_chatbot_for_messengers.domain.vo import MessengerId, UserId
 from llm_chatbot_for_messengers.messenger.middleware.rate_limit import InMemoryTokenBucketRateLimitStrategy
 from llm_chatbot_for_messengers.messenger.vo import MessengerRequest
 

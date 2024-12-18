@@ -74,7 +74,7 @@ class QAState(BaseModel):
 
 class QAWithWebSummaryState(BaseModel):
     question: str | None = Field(description="User's question", default=None)
-    context: str | None = Field(description='Context to answer the question', default=None)
+    context: str = Field(description='Context to answer the question', default='No context')
     messages: Annotated[list[AnyMessage], add_messages] = Field(description='Chat histories', default_factory=list)
     answer: str | None = Field(description="Agent's answer", default=None)
 

@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends, FastAPI, Request, Response
 
-from llm_chatbot_for_messengers.core.entity.agent import QAAgent
-from llm_chatbot_for_messengers.core.output.dao import MessengerDao
-from llm_chatbot_for_messengers.core.vo import MessengerIdEnum
+from llm_chatbot_for_messengers.domain.entity.agent import QAAgent
+from llm_chatbot_for_messengers.domain.output.dao import MessengerDao
+from llm_chatbot_for_messengers.domain.vo import MessengerIdEnum
 from llm_chatbot_for_messengers.messenger.kakao.container import (
     get_messenger_dao,
     get_qa_agent,
@@ -16,7 +16,7 @@ from llm_chatbot_for_messengers.messenger.kakao.vo import ChatRequest, ChatRespo
 from llm_chatbot_for_messengers.messenger.vo import MessengerRequest
 
 if TYPE_CHECKING:
-    from llm_chatbot_for_messengers.core.entity.messenger import Messenger
+    from llm_chatbot_for_messengers.domain.entity.messenger import Messenger
     from llm_chatbot_for_messengers.messenger.middleware.rate_limit import RateLimitStrategy
 
 
