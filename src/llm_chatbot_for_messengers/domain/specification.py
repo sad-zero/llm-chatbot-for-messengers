@@ -7,13 +7,16 @@ from __future__ import annotations
 import asyncio
 import inspect
 import time
+from abc import ABC, abstractmethod
 from enum import Enum, unique
 from functools import partial, wraps
 from threading import Thread
-from typing import Annotated, Any, Callable, Self
+from typing import Annotated, Any, Callable, Generic, Self, TypeVar
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+from typing_extensions import override
 
+from llm_chatbot_for_messengers.domain.chatbot import Chatbot
 from llm_chatbot_for_messengers.domain.error import SpecificationError
 from llm_chatbot_for_messengers.domain.messenger import MessengerId
 
@@ -83,11 +86,46 @@ def check_timeout(func: Callable[..., Any], *, timeout: int) -> Callable[..., An
         return awrapper
     return wrapper
 
+T = TypeVar('T')
+class Specification(ABC, BaseModel, Generic[T]):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
-class ChatbotSpecification:
-    # TODO: impl
+    @abstractmethod
+    async def is_satisfied_by(self, t: T) -> bool:
+        pass
+
+    def and_(self, spec: Specification) -> Specification:
+        return AndSpecification[T](one=self, other=spec)
+
+class AndSpecification(Specification[T]):
+    one: Specification
+    other: Specification
+
+    @override
+    async def is_satisfied_by(self, t: T) -> bool:
+        return (await self.one.is_satisfied_by(t)) and (await self.other.is_satisfied_by(t))
+
+class ChatbotSpecification(Specification[Chatbot]):
+    workflow_spec: WorkflowSpecification = Field(description="Workflow's specification")
+    memory_spec: MemorySpecification = Field(description="Memory's specification")
+    prompt_specs: list[PromptSpecification] = Field(description="Prompt's specification")
+    timeout: int = Field(description="Configure max latency seconds", gt=0)
+    fallback_message: str = Field(description="Answer this when time is over.", default="Too complex to answer in time.")
+
+    @override
+    async def is_satisfied_by(self, t: Chatbot) -> bool:
+        if not await self.workflow_spec.is_satisfied_by(t.workflow):
+            err_msg: str = f"Workflow doesn't fulfill spec: {self.workflow_spec}, workflow: {t.workflow}"
+
+
+class WorkflowSpecification(Specification):
     pass
 
+class MemorySpecification(Specification):
+    pass
+
+class PromptSpecification(Specification):
+    pass
 
 class MessengerSpecification:
     # TODO: impl

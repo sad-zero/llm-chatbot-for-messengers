@@ -12,6 +12,10 @@ if TYPE_CHECKING:
     from llm_chatbot_for_messengers.domain.chatbot import MemoryType
 
 
+class ChatbotFactory:
+    pass
+
+
 class ChatbotImpl(BaseModel, Chatbot):
     config: AgentConfig = Field(description='Agent configuration')
     __workflow: QAWithWebSummaryWorkflow = PrivateAttr(default=None)  # type: ignore

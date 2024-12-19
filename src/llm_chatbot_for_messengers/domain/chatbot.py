@@ -1,19 +1,22 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, Annotated, Generic, Literal, Self, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, Self, TypeVar
 
 import aiohttp
 from bs4 import BeautifulSoup
 from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts import BaseChatPromptTemplate
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_core.messages import AnyMessage  # noqa: TCH002
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph, add_messages
 from langgraph.graph.graph import CompiledGraph
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,8 +34,22 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+class ChatbotState(BaseModel):
+    question: str = Field(description="User's question")
+    answer: str | None = Field(description="Chatbot's answer")
 
-class Chatbot(ABC):
+StateSchema = TypeVar('StateSchema', bound=ChatbotState)
+Memory = TypeVar('Memory', bound=BaseCheckpointSaver)
+Prompt = TypeVar('Prompt', bound=BaseChatPromptTemplate)
+
+
+class Chatbot(ABC, BaseModel, Generic[StateSchema]):
+    workflow: Workflow[StateSchema] = Field(description="Configure senarios")
+    memory: Memory = Field(description="Store chat histories")
+    prompts: list[Prompt] = Field(description="Configure LLM's prompts")
+    timeout: int = Field(description="Configure max latency seconds", gt=0)
+    fallback_message: str = Field(description="Answer this when time is over.", default="Too complex to answer in time.")
+
     @abstractmethod
     async def initialize(self) -> None:
         """
@@ -48,6 +65,22 @@ class Chatbot(ABC):
         - Release memory
         - etc
         """
+
+    async def answer(self, question: str, **kwargs: Any) -> StateSchema:
+        """Answer the question
+        Args:
+            question (str): Question
+            **kwargs (Any): extra informations(Don't extract directly)
+        """
+        try:
+            initial_state: StateSchema = StateSchema(question=question)
+            final_state: StateSchema = await asyncio.wait_for(self.workflow.ainvoke(initial_state, **kwargs), self.timeout)
+        except asyncio.CancelledError:
+            err_info: dict = {"timeout": self.timeout, "question": question, "kwargs": kwargs}
+            logger.exception(json.dumps(err_info, ensure_ascii=False))
+            return StateSchema(question=question, answer=self.fallback_message)
+        else:
+            return final_state
 
     async def ask(self, user: User, question: str, timeout: int | None = None) -> str:
         """Ask question
@@ -92,10 +125,25 @@ class Chatbot(ABC):
         """
 
 
-StateSchema = TypeVar('StateSchema', bound=BaseModel)
+
+class Workflow(BaseModel, Generic[StateSchema]):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    graph: CompiledGraph = Field(description="Executable graph")
+    state_schema: type[StateSchema] = Field(description="Type holder")
+
+    async def execute(self, initial: StateSchema, **kwargs) -> StateSchema:
+        """Execute workflow
+        Args:
+            initial (StateSchema): Initial state
+            **kwargs        (Any): extra informations(Don't extract directly)
+        Returns:
+            StateSchema          : Final state
+        """
+        graph_response: dict = await self.graph.ainvoke(initial, **kwargs)
+        return self.state_schema.model_validate(graph_response, strict=True)
 
 
-class Workflow(ABC, Generic[StateSchema]):
     def __init__(self, compiled_graph: CompiledGraph, state_schema: type[StateSchema]):
         if not isinstance(compiled_graph, CompiledGraph):
             err_msg: str = f'compiled_graph should be CompiledGraph type: {compiled_graph}'
@@ -136,6 +184,8 @@ class Workflow(ABC, Generic[StateSchema]):
     @classmethod
     def _graph_builder(cls, state_schema: type[StateSchema]) -> StateGraph:
         return StateGraph(state_schema=state_schema)
+
+
 
 
 class QAState(BaseModel):
