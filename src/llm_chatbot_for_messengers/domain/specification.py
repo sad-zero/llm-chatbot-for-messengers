@@ -169,9 +169,6 @@ class MemorySpecification(Specification[Memory]):
     @model_validator(mode='after')
     def validate_persistant_info(self) -> Self:
         match self.type_:
-            case 'volatile':
-                self.conn_uri = None
-                self.conn_pool_size = None
             case 'persistant':
                 if self.conn_uri is None or not self.conn_uri.startswith('postgresql://'):
                     err_msg: str = f'Conn uri is invalid: postgresql://xxx, conn_uri: {self.conn_uri:r}'
@@ -179,6 +176,8 @@ class MemorySpecification(Specification[Memory]):
                 if self.conn_pool_size is None or not self.conn_pool_size > 0:
                     err_msg = f'Conn pool size is invalid: > 0, conn_pool_size: {self.conn_pool_size:r}'
                     raise ValueError(err_msg)
+            case _:
+                pass
         return self
 
     @override
