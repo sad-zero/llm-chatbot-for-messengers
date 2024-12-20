@@ -1,57 +1,64 @@
-import asyncio
-import time
-
 import pytest
-from llm_chatbot_for_messengers.domain.error import SpecificationError
-from llm_chatbot_for_messengers.domain.specification import check_timeout
+from langgraph.graph import StateGraph
+from llm_chatbot_for_messengers.domain.chatbot import ChatbotState, Workflow, WorkflowNode
+from llm_chatbot_for_messengers.domain.specification import WorkflowNodeSpecification, WorkflowSpecification
+from pydantic import BaseModel
 
 
-def _normal_func(elapsed: int):
-    time.sleep(elapsed)
-    return True
-
-
-async def _async_func(elapsed: int):
-    await asyncio.sleep(elapsed)
-    return True
-
-
-@pytest.mark.parametrize(
-    ('elapsed', 'timeout', 'expected'),
-    [
-        (1.7, 2, 'ok'),
-        (2, 2, 'error'),
-        (2.1, 2, 'error'),
-        (3.1, 2, 'error'),
-    ],
-)
-def test_check_timeout_normal(elapsed, timeout, expected):
-    traced = check_timeout(func=_normal_func, timeout=timeout)
-    match expected:
-        case 'ok':
-            assert traced(elapsed)
-        case 'error':
-            s = time.time()
-            with pytest.raises(SpecificationError):
-                traced(elapsed)
-            e = time.time()
-            assert abs((e - s) - timeout) < 0.5
-
-
-@pytest.mark.parametrize(
-    ('elapsed', 'timeout', 'expected'),
-    [
-        (1.7, 2, 'ok'),
-        (2, 2, 'error'),
-        (2.1, 2, 'error'),
-    ],
-)
 @pytest.mark.asyncio
-async def test_check_timeout_async(elapsed, timeout, expected):
-    traced = check_timeout(func=_async_func, timeout=timeout)
-    match expected:
-        case 'ok':
-            assert await traced(elapsed)
-        case 'error':
-            with pytest.raises(SpecificationError):
-                assert await traced(elapsed)
+async def test_workflow_node_spec():
+    # given
+    spec = WorkflowNodeSpecification[ChatbotState, BaseModel, ChatbotState](
+        initial_schema=ChatbotState,
+        final_schemas=(BaseModel, ChatbotState),
+        name='test_node',
+        func=lambda x, y, z: (x, y, z),
+    )
+    node = WorkflowNode[ChatbotState, BaseModel, ChatbotState](
+        initial_schema=ChatbotState,
+        final_schemas=(BaseModel, ChatbotState),
+        name='test_node',
+        func=lambda x, y, z: (x, y, z),
+    )
+    # then
+    assert await spec.is_satisfied_by(node)
+
+
+@pytest.mark.asyncio
+async def test_workflow_spec():
+    # given
+    start_node_spec = WorkflowNodeSpecification[ChatbotState, ChatbotState](
+        initial_schema=ChatbotState,
+        final_schemas=(ChatbotState,),
+        name='start',
+        func=lambda x, y, z: (x, y, z),
+    )
+    end_node_spec = WorkflowNodeSpecification[ChatbotState, ChatbotState](
+        initial_schema=ChatbotState,
+        final_schemas=(ChatbotState,),
+        name='end',
+        func=lambda x, y, z: (x, y, z),
+    )
+    start_node_spec.add_children(end_node_spec)
+
+    workflow_spec = WorkflowSpecification(
+        start_node_spec=start_node_spec,
+        end_node_spec=end_node_spec,  # type: ignore
+    )
+    # when
+    start_node = WorkflowNode[ChatbotState, ChatbotState](
+        initial_schema=ChatbotState,
+        final_schemas=(ChatbotState,),
+        name='start',
+        func=lambda x, y, z: (x, y, z),
+    )
+    end_node = WorkflowNode[ChatbotState, ChatbotState](
+        initial_schema=ChatbotState,
+        final_schemas=(ChatbotState,),
+        name='end',
+        func=lambda x, y, z: (x, y, z),
+    )
+    start_node.add_children(end_node)
+    workflow = Workflow(start_node=start_node, end_node=end_node, graph=StateGraph(ChatbotState).compile())  # type: ignore
+    # then
+    assert await workflow_spec.is_satisfied_by(workflow)

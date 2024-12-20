@@ -12,7 +12,6 @@ from typing import Callable, Generic, Literal, Self, TypeVar, TypeVarTuple, Unio
 
 from langchain.prompts import BaseChatPromptTemplate  # noqa: TCH002
 from langchain_core.language_models import BaseChatModel  # noqa: TCH002
-from langgraph.graph.graph import CompiledGraph  # noqa: TCH002
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import override
 
@@ -77,13 +76,13 @@ class ChatbotSpecification(Specification[Chatbot]):
 
 
 class WorkflowSpecification(Specification[Workflow]):
-    start_node_spec: WorkflowNodeSpecification[ChatbotState, *BaseModel] = Field(  # type: ignore
+    start_node_spec: WorkflowNodeSpecification[ChatbotState, BaseModel] = Field(  # type: ignore
         description="Workflow's start node specification"
     )
     end_node_spec: WorkflowNodeSpecification[BaseModel, ChatbotState] = Field(
         description="Workflow's end node specification"
     )
-    graph: CompiledGraph = Field(description="Configure workflow's graph")
+    # graph: CompiledGraph = Field(description="Configure workflow's graph")
 
     @override
     async def is_satisfied_by(self, t: Workflow) -> bool:
@@ -107,7 +106,7 @@ class WorkflowNodeSpecification(
     Specification[WorkflowNode[InitialState, *FinalStates]], Generic[InitialState, *FinalStates]
 ):
     initial_schema: type[InitialState] = Field(description="Configure node's initial schema")  # type: ignore
-    final_schemas: tuple[*FinalStates] = Field(description="Configure node's final schemas")  # type: ignore
+    final_schemas: tuple[*FinalStates, ...] = Field(description="Configure node's final schemas")  # type: ignore
     name: str = Field(description="Configure node's name")
     func: Callable[  # type: ignore
         [dict[str, BaseChatPromptTemplate] | None, BaseChatModel | None, InitialState], Union[*FinalStates]
@@ -153,6 +152,13 @@ class WorkflowNodeSpecification(
             err_msg = f"Name doesn't fulfill spec: {self.name:r}, name: {t.name:r}"
             return _fail_validation(err_msg)
         return True
+
+    def add_children(self, *children: WorkflowNodeSpecification) -> Self:
+        if not any(isinstance(child, WorkflowNodeSpecification) for child in children):
+            err_msg: str = f"Children doesn't WorkflowNodeSpecification: {children}"
+            raise TypeError(err_msg)
+        self.children_spec.extend(children)
+        return self
 
 
 class MemorySpecification(Specification[Memory]):

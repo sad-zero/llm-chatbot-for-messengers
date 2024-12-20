@@ -8,7 +8,6 @@ from collections import deque
 from enum import Enum, unique
 from functools import partial
 from typing import (
-    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
@@ -22,16 +21,13 @@ from typing import (
 
 from langchain.prompts import BaseChatPromptTemplate  # noqa: TCH002
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain_core.language_models import BaseChatModel  # noqa: TCH002
 from langchain_core.messages import AnyMessage  # noqa: TCH002
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver  # noqa: TCH002
 from langgraph.graph import StateGraph, add_messages
 from langgraph.graph.graph import CompiledGraph  # noqa: TCH002
 from pydantic import BaseModel, ConfigDict, Field
-
-if TYPE_CHECKING:
-    from langchain_core.language_models import BaseChatModel
-
 
 logger = logging.getLogger(__name__)
 
@@ -91,8 +87,7 @@ class Chatbot(ABC, BaseModel):
 
 class Workflow(BaseModel):
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
-    schema: type[ChatbotState] = Field(description='Type holder')  # type: ignore
-    start_node: WorkflowNode[ChatbotState, *BaseModel] = Field(description="Workflow's start node")  # type: ignore
+    start_node: WorkflowNode[ChatbotState, BaseModel] = Field(description="Workflow's start node")  # type: ignore
     end_node: WorkflowNode[BaseModel, ChatbotState] = Field(description="Workflow's end node")  # type: ignore
     graph: CompiledGraph = Field(description='Executable graph')
 
@@ -105,7 +100,7 @@ class Workflow(BaseModel):
             StateSchema          : Final state
         """
         graph_response: dict = await self.graph.ainvoke(initial, **kwargs)
-        return self.schema.model_validate(graph_response, strict=True)
+        return ChatbotState.model_validate(graph_response, strict=True)
 
     @classmethod
     def _build_llm(cls, llm_config: LLM) -> BaseChatModel:
@@ -136,7 +131,7 @@ class WorkflowNode(BaseModel, Generic[InitialState, *FinalStates]):
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     initial_schema: type[InitialState] = Field(description='Type holder')  # type: ignore
-    final_schemas: tuple[*FinalStates] = Field(description='Type holder')  # type: ignore
+    final_schemas: tuple[*FinalStates, ...] = Field(description='Type holder')  # type: ignore
     name: str = Field(description="Node's name")
     func: Callable[  # type: ignore
         [dict[str, BaseChatPromptTemplate] | None, BaseChatModel | None, InitialState], Union[*FinalStates]
@@ -173,6 +168,13 @@ class WorkflowNode(BaseModel, Generic[InitialState, *FinalStates]):
             Callable[NodeStateSchema, Union[*NodeStateSchemas]]: Executable function
         """
         return partial(self.func, prompts, llm)
+
+    def add_children(self, *children: WorkflowNode) -> Self:
+        if not any(isinstance(child, WorkflowNode) for child in children):
+            err_msg: str = f"Children doesn't WorkflowNode: {children}"
+            raise TypeError(err_msg)
+        self.children.extend(children)
+        return self
 
 
 @unique
