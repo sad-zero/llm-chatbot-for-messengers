@@ -38,6 +38,6 @@ async def test_chatbot_factory():
     )
     chatbot_factory = ChatbotFactory()
     # when
-    chatbot: Chatbot = await chatbot_factory.create_chatbot(chatbot_spec)
+    async with chatbot_factory.create_chatbot(chatbot_spec) as chatbot:
     # then
-    assert await chatbot_spec.is_satisfied_by(chatbot)
+        assert await chatbot_spec.is_satisfied_by(chatbot)

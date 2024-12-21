@@ -1,14 +1,22 @@
+from contextlib import asynccontextmanager
+import logging
 import os
 from pathlib import Path
-from typing import Literal
+from typing import AsyncGenerator, Generator, Literal
 from langchain.prompts import ChatPromptTemplate, PromptTemplate
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 import yaml
 from yaml.parser import ParserError
 from llm_chatbot_for_messengers.domain.chatbot import Chatbot, Memory, Prompt, Workflow
+from llm_chatbot_for_messengers.domain.error import FactoryError
+from llm_chatbot_for_messengers.domain.repository import ChatbotRepository
 from llm_chatbot_for_messengers.domain.specification import ChatbotSpecification, MemorySpecification, PromptSpecification, TracingSpecification, WorkflowSpecification
 from llm_chatbot_for_messengers.domain.tracing import Tracing
 
+logger = logging.getLogger(__name__)
 # class ChatbotImpl(BaseModel, Chatbot):
 #     config: AgentConfig = Field(description='Agent configuration')
 #     __workflow: QAWithWebSummaryWorkflow = PrivateAttr(default=None)  # type: ignore
@@ -56,40 +64,82 @@ from llm_chatbot_for_messengers.domain.tracing import Tracing
 
 
 class ChatbotFactory:
-    
-    async def create_chatbot(self, spec: ChatbotSpecification) -> Chatbot:
+    @asynccontextmanager
+    async def create_chatbot(self, spec: ChatbotSpecification) -> AsyncGenerator[Chatbot, None]:
         """Create a new chatbot
         Args:
             spec (ChatbotSpecification): Chatbot Specification
         Returns:
             Chatbot: Initialized chatbot
         """
-        memory: Memory = await self.__create_memory(spec.memory_spec)
-        prompts: list[Prompt] = await self.__create_prompts(spec.prompt_specs)
-        workflow: Workflow = await self.__create_workflow(spec=spec.workflow_spec, memory=memory, prompts=prompts)
+        try:
+            prompts: list[Prompt] = await self.__create_prompts(spec.prompt_specs)
+            async with self.__create_memory(spec.memory_spec) as memory:
+                workflow: Workflow = await self.__create_workflow(spec=spec.workflow_spec, memory=memory, prompts=prompts)
 
-        chatbot: Chatbot = Chatbot(
-            workflow=workflow,
-            memory=memory,
-            prompts=prompts,
-            timeout=spec.timeout,
-            fallback_message=spec.fallback_message,
-        )
-        return chatbot
+                chatbot: Chatbot = Chatbot(
+                    workflow=workflow,
+                    memory=memory,
+                    prompts=prompts,
+                    timeout=spec.timeout,
+                    fallback_message=spec.fallback_message,
+                )
+                yield chatbot
+        except Exception as e:
+            err_msg: str = f"There are some problems when creating chatbot with spec: {spec:r}" 
+            raise FactoryError(err_msg) from e
+
     
-    async def __create_memory(self, spec: MemorySpecification) -> Memory:
-        pass
+    @asynccontextmanager
+    async def __create_memory(self, spec: MemorySpecification) -> AsyncGenerator[Memory, None]:
+        err_msg: str = f"There are some problems when creating memory with spec: {spec:r}"
+        try:
+           match spec.type_:
+                case "volatile":
+                   async with MemorySaver() as saver:
+                       yield saver
+                case "persistant":
+                   async with AsyncConnectionPool(
+                       conninfo=spec.conn_uri,
+                       max_size=spec.conn_pool_size,
+                       kwargs={
+                           'autocommit': True,
+                           'prepare_threshold': 0,
+                       },
+                   ) as pool:
+                        yield AsyncPostgresSaver(pool)
+                case _:
+                   raise FactoryError(err_msg)
+                
+        except Exception as e:
+            raise FactoryError(err_msg) from e
 
     async def __create_prompts(self, specs: list[PromptSpecification]) -> list[Prompt]:
-        pass
-    
-    async def __create_workflow(self, spec: WorkflowSpecification, memory: Memory, prompts: list[Prompt]) -> Workflow:
-        pass
+        prompt_dir: str | None = os.getenv('PROMPT_DIR')
+        if prompt_dir is None:
+            prompt_dir_path: Path = Path('src/resources/prompt')
+        else:
+            try:
+                prompt_dir_path = Path(prompt_dir)
+            except TypeError as e:
+                err_msg = f'PROMPT_DIR({prompt_dir}) environment should indicate valid Path'
+                raise ValueError(err_msg) from e
 
+        result: list[Prompt] = [] 
+        for spec in specs:
+            prompt_path: Path = prompt_dir_path / spec.node / spec.name
+            if not prompt_path.exists():
+                err_msg = f"{prompt_path} doesn't exist"
+                raise ValueError(err_msg)
 
-class YamlPromptTemplateParser:
+            with open(prompt_path, encoding='UTF-8') as fd:
+                raw_template: str = fd.read()
+                template: ChatPromptTemplate = self.__parse(raw_template)
+                prompt = Prompt(node=spec.node, name=spec.name, template=template) 
+            result.append(prompt)
+        return result 
 
-    def parse(self, raw_template: str) -> ChatPromptTemplate:
+    def __parse(self, raw_template: Path) -> ChatPromptTemplate:
         try:
             loaded_template: dict = yaml.load(raw_template, Loader=yaml.SafeLoader)
             if not isinstance(loaded_template, dict):
@@ -137,30 +187,10 @@ class YamlPromptTemplateParser:
         except Exception as e:
             err_msg = f'Parsing fails: {raw_template}'
             raise ParserError(err_msg) from e
+    
+    async def __create_workflow(self, spec: WorkflowSpecification, memory: Memory, prompts: list[Prompt]) -> Workflow:
+        pass
 
-    def parse_file(self, node_name: str, template_name: str) -> ChatPromptTemplate:
-        if not isinstance(node_name, str) or not isinstance(template_name, str):
-            err_msg: str = 'node_name and template_name should be str'
-            raise TypeError(err_msg)
-
-        prompt_dir: str | None = os.getenv('PROMPT_DIR')
-        if prompt_dir is None:
-            prompt_dir_path: Path = Path('src/resources/prompt')
-        else:
-            try:
-                prompt_dir_path = Path(prompt_dir)
-            except TypeError as e:
-                err_msg = f'PROMPT_DIR({prompt_dir}) environment should indicate valid Path'
-                raise ValueError(err_msg) from e
-
-        prompt_path = prompt_dir_path / node_name / template_name
-        if not prompt_path.exists():
-            err_msg = f"{prompt_path} doesn't exist"
-            raise ValueError(err_msg)
-
-        with open(prompt_path, encoding='UTF-8') as fd:
-            raw_template: str = fd.read()
-            return self.parse(raw_template=raw_template)
 
 class TracingFactory:
     async def create_tracing(self, spec: TracingSpecification) -> Tracing:

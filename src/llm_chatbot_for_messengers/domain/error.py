@@ -16,3 +16,6 @@ class DataError(RuntimeError):
 
 class WorkflowError(RuntimeError):
     pass
+
+class FactoryError(RuntimeError):
+    pass
