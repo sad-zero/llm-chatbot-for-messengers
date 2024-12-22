@@ -138,6 +138,8 @@ class WorkflowNode(BaseModel, Generic[InitialState, *FinalStates]):
     ] = Field(description="Node's function")
     llm: LLM | None = Field(description="Node's llm", default=None)
     children: list[WorkflowNode] = Field(description="Node's children", default_factory=list)
+    conditional_edges: bool = Field(description='Conditional children')
+    conditional_func: Callable[[*FinalStates], list[str]] | None = Field(description='Conditional rules', default=None)
 
     def travel(self) -> list[WorkflowNode]:
         """BFS travel

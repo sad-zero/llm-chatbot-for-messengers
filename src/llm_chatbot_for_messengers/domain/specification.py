@@ -84,6 +84,13 @@ class WorkflowSpecification(Specification[Workflow]):
     )
     # graph: CompiledGraph = Field(description="Configure workflow's graph")
 
+    @model_validator(mode='after')
+    def verify_reachable(self) -> Self:
+        if not self.__is_reachable(self.start_node_spec, self.end_node_spec):
+            err_msg: str = f"Start node doesn't reach end node: {self:r}"
+            raise ValueError(err_msg)
+        return self
+
     @override
     async def is_satisfied_by(self, t: Workflow) -> bool:
         if not await self.start_node_spec.is_satisfied_by(t.start_node):
@@ -96,6 +103,19 @@ class WorkflowSpecification(Specification[Workflow]):
             err_msg = f'End node has children: {self.end_node_spec:r}, type: {t.end_node:r}'
             return _fail_validation(err_msg)
         return True
+
+    @classmethod
+    def __is_reachable(cls, start: WorkflowNodeSpecification, end: WorkflowNodeSpecification) -> bool:
+        queue: deque[WorkflowNodeSpecification] = deque([start])
+        visited = set()
+        while queue:
+            node = queue.popleft()
+            if node.name == end.name:
+                return True
+            if node.name not in visited:
+                visited.add(node.name)
+                queue.extend(child for child in node.children_spec)
+        return False
 
 
 InitialState = TypeVar('InitialState', bound=BaseModel)
@@ -115,6 +135,19 @@ class WorkflowNodeSpecification(
     children_spec: list[WorkflowNodeSpecification] = Field(
         description="Configure children's specification", default_factory=list
     )
+    conditional_edges: bool = Field(
+        description='Configure whether children are connected conditionally or not.', default=False
+    )
+    conditional_func: Callable[[*FinalStates], list[str]] | None = Field(
+        description='Configure conditional rules.', default=None
+    )
+
+    @model_validator(mode='after')
+    def verify_conditional(self) -> Self:
+        if self.conditional_edges and (self.conditional_func is None):
+            err_msg = "There are conditional edges but conditional func doesn't set"
+            raise ValueError(err_msg)
+        return self
 
     @override
     async def is_satisfied_by(self, t: WorkflowNode[InitialState, *FinalStates]) -> bool:
@@ -150,6 +183,12 @@ class WorkflowNodeSpecification(
             return _fail_validation(err_msg)
         if self.name != t.name:
             err_msg = f"Name doesn't fulfill spec: {self.name:r}, name: {t.name:r}"
+            return _fail_validation(err_msg)
+        if self.conditional_edges != t.conditional_edges:
+            err_msg = f"Conditional edges doesn't fulfill spec: {self.conditional_edges:r}, conditional edges: {t.conditional_edges:r}"
+            return _fail_validation(err_msg)
+        if self.conditional_func != t.conditional_func:
+            err_msg = f"Conditional func doesn't fulfill spec: {self.conditional_func:r}, conditional func: {t.conditional_func:r}"
             return _fail_validation(err_msg)
         return True
 
