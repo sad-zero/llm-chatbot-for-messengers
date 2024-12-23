@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum, unique
-from functools import partial
+from functools import wraps
 from typing import (
     Annotated,
     Any,
@@ -23,20 +23,29 @@ from langchain.prompts import BaseChatPromptTemplate  # noqa: TCH002
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain_core.language_models import BaseChatModel  # noqa: TCH002
 from langchain_core.messages import AnyMessage  # noqa: TCH002
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.base import BaseCheckpointSaver  # noqa: TCH002
-from langgraph.graph import StateGraph, add_messages
+from langgraph.graph import add_messages  # noqa: TCH002
 from langgraph.graph.graph import CompiledGraph  # noqa: TCH002
 from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
+class InnerState(BaseModel, ABC):
+    @abstractmethod
+    def convert(self) -> ChatbotState:
+        ...
+    @abstractmethod
+    def transfer(self) -> InnerState:
+        ...
 
 class ChatbotState(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     question: str = Field(description="User's question")
     answer: str | None = Field(description="Chatbot's answer", default=None)
+    messages: Annotated[list[AnyMessage], add_messages] = Field(description="Chat histories", default_factory=list)
+    inner_state: InnerState | None = Field(description="Inner state to control other states", default=None)
+
 
 
 class Prompt(BaseModel):
@@ -57,7 +66,7 @@ class Memory(BaseModel):
     memory: BaseCheckpointSaver = Field(description='Configure memory')
 
 
-class Chatbot(ABC, BaseModel):
+class Chatbot(BaseModel):
     workflow: Workflow = Field(description='Configure senarios')
     memory: Memory = Field(description='Store chat histories')
     prompts: list[Prompt] = Field(description="Configure LLM's prompts")
@@ -102,28 +111,9 @@ class Workflow(BaseModel):
         graph_response: dict = await self.graph.ainvoke(initial, **kwargs)
         return ChatbotState.model_validate(graph_response, strict=True)
 
-    @classmethod
-    def _build_llm(cls, llm_config: LLM) -> BaseChatModel:
-        match llm_config.provider:
-            case LLMProvider.OPENAI:
-                model = ChatOpenAI(
-                    model=llm_config.model,
-                    temperature=llm_config.temperature,
-                    top_p=llm_config.top_p,
-                    max_tokens=llm_config.max_tokens,
-                    **llm_config.extra_configs,
-                )
-            case _:
-                err_msg: str = f'Cannot support {llm_config.provider} provider now.'
-                raise RuntimeError(err_msg)
-        return model
-
-    @classmethod
-    def _graph_builder(cls, state_schema: type[ChatbotState]) -> StateGraph:
-        return StateGraph(state_schema=state_schema)
 
 
-InitialState = TypeVar('InitialState', bound=BaseModel)
+InitialState = TypeVar('InitialState', bound=InnerState | ChatbotState)
 FinalStates = TypeVarTuple('FinalStates')
 
 
@@ -159,7 +149,7 @@ class WorkflowNode(BaseModel, Generic[InitialState, *FinalStates]):
 
     def get_executable_node(
         self, prompts: dict[str, BaseChatPromptTemplate] | None, llm: BaseChatModel | None
-    ) -> Callable[InitialState, Union[*FinalStates]]:  # type: ignore
+    ) -> Callable[ChatbotState, ChatbotState]:  # type: ignore
         """Return executable node function
         Args:
             prompt (dict | None): {
@@ -167,9 +157,21 @@ class WorkflowNode(BaseModel, Generic[InitialState, *FinalStates]):
             }
             llm (BaseChatModel | None): used in function
         Returns:
-            Callable[NodeStateSchema, Union[*NodeStateSchemas]]: Executable function
+            Callable[ChatbotState, ChatbotState]: Tracable node
         """
-        return partial(self.func, prompts, llm)
+        @wraps(self.func)
+        async def wrapper(state: ChatbotState) -> ChatbotState:
+            if issubclass(self.initial_schema, ChatbotState):
+                response = await self.func(prompts, llm, state) # type: ignore
+            else:
+                response = await self.func(prompts, llm, state.inner_state) # type: ignore
+            if len(self.final_schemas) == 1 and self.final_schemas[0] is ChatbotState:
+                return response
+            return ChatbotState(question=state.question,
+                                answer=state.answer,
+                                inner_state=response,
+                                )
+        return wrapper
 
     def add_children(self, *children: WorkflowNode) -> Self:
         if not any(isinstance(child, WorkflowNode) for child in children):

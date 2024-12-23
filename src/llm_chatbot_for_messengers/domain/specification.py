@@ -15,7 +15,16 @@ from langchain_core.language_models import BaseChatModel  # noqa: TCH002
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import override
 
-from llm_chatbot_for_messengers.domain.chatbot import LLM, Chatbot, ChatbotState, Memory, Prompt, Workflow, WorkflowNode
+from llm_chatbot_for_messengers.domain.chatbot import (  # type: ignore
+    LLM,
+    Chatbot,
+    ChatbotState,
+    InnerState,
+    Memory,
+    Prompt,
+    Workflow,
+    WorkflowNode,
+)
 from llm_chatbot_for_messengers.domain.messenger import MessengerId
 
 logger = logging.getLogger(__name__)
@@ -76,10 +85,10 @@ class ChatbotSpecification(Specification[Chatbot]):
 
 
 class WorkflowSpecification(Specification[Workflow]):
-    start_node_spec: WorkflowNodeSpecification[ChatbotState, BaseModel] = Field(  # type: ignore
+    start_node_spec: WorkflowNodeSpecification[ChatbotState, InnerState | ChatbotState] = Field(  # type: ignore
         description="Workflow's start node specification"
     )
-    end_node_spec: WorkflowNodeSpecification[BaseModel, ChatbotState] = Field(
+    end_node_spec: WorkflowNodeSpecification[InnerState | ChatbotState, ChatbotState] = Field(
         description="Workflow's end node specification"
     )
     # graph: CompiledGraph = Field(description="Configure workflow's graph")
@@ -118,7 +127,7 @@ class WorkflowSpecification(Specification[Workflow]):
         return False
 
 
-InitialState = TypeVar('InitialState', bound=BaseModel)
+InitialState = TypeVar('InitialState', bound=InnerState | ChatbotState)
 FinalStates = TypeVarTuple('FinalStates')
 
 
