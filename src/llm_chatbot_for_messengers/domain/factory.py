@@ -114,17 +114,18 @@ class ChatbotFactory:
                 )
                 yield chatbot
         except Exception as e:
-            err_msg: str = f'There are some problems when creating chatbot with spec: {spec:r}'
+            err_msg: str = f'There are some problems when creating chatbot with spec: {spec!r}'
             raise FactoryError(err_msg) from e
 
     @classmethod
     @asynccontextmanager
     async def __create_memory(cls, spec: MemorySpecification) -> AsyncGenerator[Memory, None]:
-        err_msg: str = f'There are some problems when creating memory with spec: {spec:r}'
+        err_msg: str = f'There are some problems when creating memory with spec: {spec!r}'
         try:
             match spec.type_:
                 case 'volatile':
-                    async with MemorySaver() as saver:
+                    saver = MemorySaver()
+                    async with saver:
                         yield Memory(type_='volatile', memory=saver)
                 case 'persistant':
                     async with AsyncConnectionPool(
@@ -159,7 +160,7 @@ class ChatbotFactory:
 
         result: list[Prompt] = []
         for spec in specs:
-            prompt_path: Path = prompt_dir_path / spec.node / spec.name
+            prompt_path: Path = prompt_dir_path / spec.node / f'{spec.name}.yaml'
             # Note: plain asyncio doesn't have asyncrous IO 'cause many OS doesn't support it.
             # See https://stackoverflow.com/questions/34699948/does-asyncio-supports-asynchronous-i-o-for-file-operationsj
             if not prompt_path.exists():
@@ -243,6 +244,7 @@ class ChatbotFactory:
             nodes[node.name] = node
             if parent in nodes:
                 nodes[parent].add_children(node)
+            queue.extend((node.name, child) for child in node_spec.children_spec)
         start_node = nodes[spec.start_node_spec.name]
         end_node = nodes[spec.end_node_spec.name]
 
@@ -288,7 +290,7 @@ class ChatbotFactory:
                     **config.extra_configs,
                 )
             case _:
-                err_msg: str = f'Invalid config is passed: {config:r}'
+                err_msg: str = f'Invalid config is passed: {config!r}'
                 raise FactoryError(err_msg)
 
 

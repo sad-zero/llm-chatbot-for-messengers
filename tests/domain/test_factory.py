@@ -1,5 +1,5 @@
 import pytest
-from llm_chatbot_for_messengers.domain.chatbot import ChatbotState
+from llm_chatbot_for_messengers.domain.chatbot import LLM, ChatbotState
 from llm_chatbot_for_messengers.domain.factory import ChatbotFactory
 from llm_chatbot_for_messengers.domain.specification import (
     ChatbotSpecification,
@@ -20,6 +20,7 @@ async def test_chatbot_factory():
                 final_schemas=(ChatbotState,),
                 name='start',
                 func=lambda x, y, z: (x, y, z),
+                llm=LLM(),
                 children_spec=[
                     WorkflowNodeSpecification[ChatbotState, ChatbotState](
                         initial_schema=ChatbotState,

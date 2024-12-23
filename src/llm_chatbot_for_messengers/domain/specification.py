@@ -55,21 +55,21 @@ class ChatbotSpecification(Specification[Chatbot]):
     @override
     async def is_satisfied_by(self, t: Chatbot) -> bool:
         if not await self.workflow_spec.is_satisfied_by(t.workflow):
-            err_msg = f"Workflow doesn't fulfill spec: {self.workflow_spec:r}, workflow: {t.workflow:r}"
+            err_msg = f"Workflow doesn't fulfill spec: {self.workflow_spec!r}, workflow: {t.workflow!r}"
             return _fail_validation(err_msg)
         if not await self.memory_spec.is_satisfied_by(t.memory):
-            err_msg = f"Memory doesn't fulfill spec: {self.memory_spec:r}, memory: {t.memory:r}"
+            err_msg = f"Memory doesn't fulfill spec: {self.memory_spec!r}, memory: {t.memory!r}"
             return _fail_validation(err_msg)
         for prompt_spec, prompt in zip(self.prompt_specs, t.prompts):
             if not await prompt_spec.is_satisfied_by(prompt):
-                err_msg = f"Prompt doesn't fulfill spec: {prompt_spec:r}, prompt: {prompt:r}"
+                err_msg = f"Prompt doesn't fulfill spec: {prompt_spec!r}, prompt: {prompt!r}"
                 return _fail_validation(err_msg)
         if self.timeout != t.timeout:
-            err_msg = f"Timeout doesn't fulfill spec: {self.timeout:r}, timeout: {t.timeout:r}"
+            err_msg = f"Timeout doesn't fulfill spec: {self.timeout!r}, timeout: {t.timeout!r}"
             return _fail_validation(err_msg)
         if self.fallback_message != t.fallback_message:
             err_msg = (
-                f"Fallback message doesn't fulfill spec: {self.fallback_message:r}, timeout: {t.fallback_message:r}"
+                f"Fallback message doesn't fulfill spec: {self.fallback_message!r}, timeout: {t.fallback_message!r}"
             )
             return _fail_validation(err_msg)
         return True
@@ -87,20 +87,20 @@ class WorkflowSpecification(Specification[Workflow]):
     @model_validator(mode='after')
     def verify_reachable(self) -> Self:
         if not self.__is_reachable(self.start_node_spec, self.end_node_spec):
-            err_msg: str = f"Start node doesn't reach end node: {self:r}"
+            err_msg: str = f"Start node doesn't reach end node: {self!r}"
             raise ValueError(err_msg)
         return self
 
     @override
     async def is_satisfied_by(self, t: Workflow) -> bool:
         if not await self.start_node_spec.is_satisfied_by(t.start_node):
-            err_msg = f"Start node doesn't fulfill spec: {self.start_node_spec:r}, type: {t.start_node:r}"
+            err_msg = f"Start node doesn't fulfill spec: {self.start_node_spec!r}, type: {t.start_node!r}"
             return _fail_validation(err_msg)
         if not await self.end_node_spec.is_satisfied_by(t.end_node):
-            err_msg = f"End node doesn't fulfill spec: {self.end_node_spec:r}, type: {t.end_node:r}"
+            err_msg = f"End node doesn't fulfill spec: {self.end_node_spec!r}, type: {t.end_node!r}"
             return _fail_validation(err_msg)
         if self.end_node_spec.children_spec:
-            err_msg = f'End node has children: {self.end_node_spec:r}, type: {t.end_node:r}'
+            err_msg = f'End node has children: {self.end_node_spec!r}, type: {t.end_node!r}'
             return _fail_validation(err_msg)
         return True
 
@@ -172,23 +172,23 @@ class WorkflowNodeSpecification(
     async def __is_satisfied_by(self, t: WorkflowNode[InitialState, *FinalStates]) -> bool:
         if self.initial_schema != t.initial_schema:
             err_msg = (
-                f"Initial schema doesn't fulfill spec: {self.initial_schema:r}, initial schema: {t.initial_schema:r}"
+                f"Initial schema doesn't fulfill spec: {self.initial_schema!r}, initial schema: {t.initial_schema!r}"
             )
             return _fail_validation(err_msg)
         if not any(issubclass(final_schema, BaseModel) for final_schema in self.final_schemas):  # type: ignore
-            err_msg = f"Final schemas doesn't BaseModel: {self.final_schemas:r}"
+            err_msg = f"Final schemas doesn't BaseModel: {self.final_schemas!r}"
             return _fail_validation(err_msg)
         if self.final_schemas != t.final_schemas:
-            err_msg = f"Final schemas doesn't fulfill spec: {self.final_schemas:r}, final schema: {t.final_schemas:r}"
+            err_msg = f"Final schemas doesn't fulfill spec: {self.final_schemas!r}, final schema: {t.final_schemas!r}"
             return _fail_validation(err_msg)
         if self.name != t.name:
-            err_msg = f"Name doesn't fulfill spec: {self.name:r}, name: {t.name:r}"
+            err_msg = f"Name doesn't fulfill spec: {self.name!r}, name: {t.name!r}"
             return _fail_validation(err_msg)
         if self.conditional_edges != t.conditional_edges:
-            err_msg = f"Conditional edges doesn't fulfill spec: {self.conditional_edges:r}, conditional edges: {t.conditional_edges:r}"
+            err_msg = f"Conditional edges doesn't fulfill spec: {self.conditional_edges!r}, conditional edges: {t.conditional_edges!r}"
             return _fail_validation(err_msg)
         if self.conditional_func != t.conditional_func:
-            err_msg = f"Conditional func doesn't fulfill spec: {self.conditional_func:r}, conditional func: {t.conditional_func:r}"
+            err_msg = f"Conditional func doesn't fulfill spec: {self.conditional_func!r}, conditional func: {t.conditional_func!r}"
             return _fail_validation(err_msg)
         return True
 
@@ -210,10 +210,10 @@ class MemorySpecification(Specification[Memory]):
         match self.type_:
             case 'persistant':
                 if self.conn_uri is None or not self.conn_uri.startswith('postgresql://'):
-                    err_msg: str = f'Conn uri is invalid: postgresql://xxx, conn_uri: {self.conn_uri:r}'
+                    err_msg: str = f'Conn uri is invalid: postgresql://xxx, conn_uri: {self.conn_uri!r}'
                     raise ValueError(err_msg)
                 if self.conn_pool_size is None or not self.conn_pool_size > 0:
-                    err_msg = f'Conn pool size is invalid: > 0, conn_pool_size: {self.conn_pool_size:r}'
+                    err_msg = f'Conn pool size is invalid: > 0, conn_pool_size: {self.conn_pool_size!r}'
                     raise ValueError(err_msg)
             case _:
                 pass
@@ -222,13 +222,13 @@ class MemorySpecification(Specification[Memory]):
     @override
     async def is_satisfied_by(self, t: Memory) -> bool:
         if self.type_ != t.type_:
-            err_msg = f"Type doesn't fulfill spec: {self.type_:r}, type: {t.type_:r}"
+            err_msg = f"Type doesn't fulfill spec: {self.type_!r}, type: {t.type_!r}"
             return _fail_validation(err_msg)
         if self.conn_uri != t.conn_uri:
-            err_msg = f"Conn uri doesn't fulfill spec: {self.conn_uri:r}, type: {t.conn_uri:r}"
+            err_msg = f"Conn uri doesn't fulfill spec: {self.conn_uri!r}, type: {t.conn_uri!r}"
             return _fail_validation(err_msg)
         if self.conn_pool_size != t.conn_pool_size:
-            err_msg = f"Conn pool size doesn't fulfill spec: {self.conn_pool_size:r}, type: {t.conn_pool_size:r}"
+            err_msg = f"Conn pool size doesn't fulfill spec: {self.conn_pool_size!r}, type: {t.conn_pool_size!r}"
             return _fail_validation(err_msg)
         return True
 
@@ -240,10 +240,10 @@ class PromptSpecification(Specification[Prompt]):
     @override
     async def is_satisfied_by(self, t: Prompt) -> bool:
         if self.node != t.node:
-            err_msg: str = f"Node doesn't fulfill spec: {self.node:r}, workflow: {t.node:r}"
+            err_msg: str = f"Node doesn't fulfill spec: {self.node!r}, workflow: {t.node!r}"
             return _fail_validation(err_msg)
         if self.name != t.name:
-            err_msg = f"Name doesn't fulfill spec: {self.name:r}, workflow: {t.name:r}"
+            err_msg = f"Name doesn't fulfill spec: {self.name!r}, workflow: {t.name!r}"
             return _fail_validation(err_msg)
         return True
 
