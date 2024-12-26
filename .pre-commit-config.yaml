@@ -14,13 +14,13 @@ repos:
         name: type-check
         language: system
         verbose: true
-        entry: hatch run types:check
+        entry: hatch run types:check-committed
         types: ["python"]
     -   id: code-check
         name: code-check
         language: system
         verbose: true
-        entry: hatch run linter:fix-code
+        entry: hatch run linter:fix-code-committed
         types: ["python"]
     -   id: sql-check
         name: sql-check

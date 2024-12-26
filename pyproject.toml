@@ -128,6 +128,7 @@ UV_PROJECT_ENVIRONMENT = ".venv/types"
 
 [tool.hatch.envs.types.scripts]
 check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
+check-committed = "git diff --name-only --cached | grep .py; if [ $? -eq 0 ]; then mypy --check-untyped-defs --install-types --non-interactive $(git diff --name-only --cached | grep .py); fi"
 [tool.mypy]
 
 [tool.hatch.envs.linter]
@@ -140,6 +141,7 @@ dependencies = [
 [tool.hatch.envs.linter.scripts]
 fix-sql = "sqlfluff fix ./scripts && sqlfluff lint ./scripts"
 fix-code = "hatch fmt"
+fix-code-committed = "git diff --name-only --cached | grep .py; if [ $? -eq 0 ]; then hatch fmt $(git diff --name-only --cached | grep .py); fi"
 
 [tool.sqlfluff.core]
 dialect = "postgres"
