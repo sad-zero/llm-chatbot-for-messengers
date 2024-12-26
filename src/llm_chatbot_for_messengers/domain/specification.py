@@ -102,10 +102,10 @@ class WorkflowSpecification(Specification[Workflow]):
 
     @override
     async def is_satisfied_by(self, t: Workflow) -> bool:
-        if not await self.start_node_spec.is_satisfied_by(t.start_node):
+        if not await self.start_node_spec.is_satisfied_by(t.start_node):  # type: ignore
             err_msg = f"Start node doesn't fulfill spec: {self.start_node_spec!r}, type: {t.start_node!r}"
             return _fail_validation(err_msg)
-        if not await self.end_node_spec.is_satisfied_by(t.end_node):
+        if not await self.end_node_spec.is_satisfied_by(t.end_node):  # type: ignore
             err_msg = f"End node doesn't fulfill spec: {self.end_node_spec!r}, type: {t.end_node!r}"
             return _fail_validation(err_msg)
         if self.end_node_spec.children_spec:
@@ -184,9 +184,6 @@ class WorkflowNodeSpecification(
                 f"Initial schema doesn't fulfill spec: {self.initial_schema!r}, initial schema: {t.initial_schema!r}"
             )
             return _fail_validation(err_msg)
-        if not any(issubclass(final_schema, BaseModel) for final_schema in self.final_schemas):  # type: ignore
-            err_msg = f"Final schemas doesn't BaseModel: {self.final_schemas!r}"
-            return _fail_validation(err_msg)
         if self.final_schemas != t.final_schemas:
             err_msg = f"Final schemas doesn't fulfill spec: {self.final_schemas!r}, final schema: {t.final_schemas!r}"
             return _fail_validation(err_msg)
@@ -207,6 +204,28 @@ class WorkflowNodeSpecification(
             raise TypeError(err_msg)
         self.children_spec.extend(children)
         return self
+
+    @classmethod
+    def __class_getitem__(cls, typevar_values: type | tuple[type, ...]):
+        """Replace TypeVarTuple to Type list to handle variadic generic.
+        See https://github.com/pydantic/pydantic/issues/5804
+        """
+        if not isinstance(typevar_values, tuple):
+            typevar_values = (typevar_values,)
+        num_final_states: int = len(typevar_values) - 1
+        if num_final_states <= 0:
+            err_msg: str = f'Final states should be greater than 0. {num_final_states}'
+            raise TypeError(err_msg)
+
+        backup = cls.__pydantic_generic_metadata__['parameters']
+        extended_parameters: tuple[TypeVar, ...] = (
+            InitialState,  # type: ignore
+            *(TypeVar(f'FinalState{idx}', bound=InitialState | ChatbotState) for idx in range(num_final_states)),  # type: ignore
+        )
+        cls.__pydantic_generic_metadata__['parameters'] = extended_parameters
+        res = super().__class_getitem__(typevar_values)
+        cls.__pydantic_generic_metadata__['parameters'] = backup
+        return res
 
 
 class MemorySpecification(Specification[Memory]):

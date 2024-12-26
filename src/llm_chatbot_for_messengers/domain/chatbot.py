@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from abc import ABC, abstractmethod
 from collections import deque
 from enum import Enum, unique
 from functools import wraps
@@ -30,22 +29,18 @@ from pydantic import BaseModel, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
-class InnerState(BaseModel, ABC):
-    @abstractmethod
-    def convert(self) -> ChatbotState:
-        ...
-    @abstractmethod
-    def transfer(self) -> InnerState:
-        ...
+
+class InnerState(BaseModel):
+    pass
+
 
 class ChatbotState(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     question: str = Field(description="User's question")
     answer: str | None = Field(description="Chatbot's answer", default=None)
-    messages: Annotated[list[AnyMessage], add_messages] = Field(description="Chat histories", default_factory=list)
-    inner_state: InnerState | None = Field(description="Inner state to control other states", default=None)
-
+    messages: Annotated[list[AnyMessage], add_messages] = Field(description='Chat histories', default_factory=list)
+    inner_state: InnerState | None = Field(description='Inner state to control other states', default=None)
 
 
 class Prompt(BaseModel):
@@ -112,7 +107,6 @@ class Workflow(BaseModel):
         return ChatbotState.model_validate(graph_response, strict=True)
 
 
-
 InitialState = TypeVar('InitialState', bound=InnerState | ChatbotState)
 FinalStates = TypeVarTuple('FinalStates')
 
@@ -159,18 +153,21 @@ class WorkflowNode(BaseModel, Generic[InitialState, *FinalStates]):
         Returns:
             Callable[ChatbotState, ChatbotState]: Tracable node
         """
+
         @wraps(self.func)
         async def wrapper(state: ChatbotState) -> ChatbotState:
             if issubclass(self.initial_schema, ChatbotState):
-                response = await self.func(prompts, llm, state) # type: ignore
+                response = await self.func(prompts, llm, state)  # type: ignore
             else:
-                response = await self.func(prompts, llm, state.inner_state) # type: ignore
+                response = await self.func(prompts, llm, state.inner_state)  # type: ignore
             if len(self.final_schemas) == 1 and self.final_schemas[0] is ChatbotState:
                 return response
-            return ChatbotState(question=state.question,
-                                answer=state.answer,
-                                inner_state=response,
-                                )
+            return ChatbotState(
+                question=state.question,
+                answer=state.answer,
+                inner_state=response,
+            )
+
         return wrapper
 
     def add_children(self, *children: WorkflowNode) -> Self:
@@ -180,10 +177,32 @@ class WorkflowNode(BaseModel, Generic[InitialState, *FinalStates]):
         self.children.extend(children)
         return self
 
+    @classmethod
+    def __class_getitem__(cls, typevar_values: type | tuple[type, ...]):
+        """Replace TypeVarTuple to Type list to handle variadic generic.
+        See https://github.com/pydantic/pydantic/issues/5804
+        """
+        if not isinstance(typevar_values, tuple):
+            typevar_values = (typevar_values,)
+        num_final_states: int = len(typevar_values) - 1
+        if num_final_states <= 0:
+            err_msg: str = f'Final states should be greater than 0. {num_final_states}'
+            raise TypeError(err_msg)
+
+        backup = cls.__pydantic_generic_metadata__['parameters']
+        extended_parameters: tuple[TypeVar, ...] = (
+            InitialState,  # type: ignore
+            *(TypeVar(f'FinalState{idx}', bound=InitialState | ChatbotState) for idx in range(num_final_states)),  # type: ignore
+        )
+        cls.__pydantic_generic_metadata__['parameters'] = extended_parameters
+        res = super().__class_getitem__(typevar_values)
+        cls.__pydantic_generic_metadata__['parameters'] = backup
+        return res
+
 
 @unique
 class LLMProvider(Enum):
-    OPENAI: str = 'OPENAI'
+    OPENAI = 'OPENAI'
 
     def __str__(self):
         return self.value
