@@ -1,0 +1,65 @@
+name: CD
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+      - develop
+env:
+  IMAGE_NAME: llm-chatbot-for-messengers
+  TAG: ${{ github.ref_name }}
+jobs:
+  delivery:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: "Login via Azure CLI"
+        uses: azure/login@v2.2.0
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: "Build and push image"
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
+          docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }} .
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
+  deploy:
+    runs-on: ubuntu-latest
+    needs:
+      - delivery
+    steps:
+      - name: "Login via Azure CLI"
+        uses: azure/login@v2.2.0
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Find Container App Name
+        id: find-container-app-name
+        run: |
+          if [ ${{ github.ref_name }} = "develop" ]; then
+            CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-dev
+          elif [ ${{ github.ref_name }} = "prod" ]; then
+            CONTAINER_APP_NAME=${{ env.IMAGE_NAME }}-prod
+          else
+            echo "Invalid branch: ${{ github.ref }}"
+            exit 1;
+          fi
+          echo CONTAINER_APP_NAME=$CONTAINER_APP_NAME >> $GITHUB_OUTPUT
+      - name: Deploy image to container app
+        env:
+          CONTAINER_APP_NAME: ${{ steps.find-container-app-name.outputs.CONTAINER_APP_NAME }}
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          acrName: ${{ secrets.REGISTRY_NAME }}
+          containerAppName: ${{ env.CONTAINER_APP_NAME }}
+          resourceGroup: ${{ secrets.RESOURCE_GROUP }}
+          imageToDeploy: ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
+          location: ${{ secrets.CONTAINER_APP_LOCATION }}
+          targetPort: 8000
+          environmentVariables: "${{ secrets.CONTAINER_APP_ENV }}" # {ENV_NAME}={ENV_VALUE} {ENV_NAME}={ENV_VALUE} Format(space seperator)

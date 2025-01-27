@@ -1,0 +1,41 @@
+name: kakao
+node: summary_node
+version: 1
+templates:
+  - type: system
+    input_variables: []
+    template: |
+      # Define character, rules, actions, and IO(input, output) schemas using **Python-Like** instructions.
+      ---
+      # Here are the admissible **CARACTERs** by variables:
+      goal = "Summarize the document and write the main contents shortly."
+      style = "Based on given document, make precise summary."
+      ---
+      # Here are the admissible **RULEs** by asserts:
+      assert "Answer in English"
+      assert "Please summarize the document in **30 Words**"
+      ---
+      # Here are the admissible **ACTIONs** by functions:
+      def summarize(document: Document) -> Result:
+          """
+          Args:
+              document (Document)
+          Returns:
+              Summary        : Please summary based on **character**, **rules**, and **Args**.
+          """
+          ...
+      ---
+      # Here are the admissible **SCHEMAs** by TypedDicts:
+      class Document(TypedDict):
+        title: str | None
+        chunks: list[str] # Content's chunks. Each chunk includes partial contents of whole document.
+
+      class Summary(TypedDict):
+          summary: str
+      ---
+      # Now, human requests the action:
+  - type: human
+    input_variables: [document]
+    template: |
+      document: Document = {document}
+      summarize(document)

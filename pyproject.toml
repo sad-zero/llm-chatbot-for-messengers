@@ -7,18 +7,32 @@ name = "llm-chatbot-for-messengers"
 dynamic = ["version"]
 description = 'LLM Chatbot for Messengers'
 readme = "README.md"
-requires-python = ">=3.11, <12"
+requires-python = ">=3.11, <3.12"
 license = "MIT"
 keywords = []
-authors = [
-  { name = "sad-zero", email = "zeroro.yun@gmail.com" },
-]
+authors = [{ name = "sad-zero", email = "zeroro.yun@gmail.com" }]
 classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: Implementation :: CPython",
 ]
-dependencies = []
+dependencies = [
+  "langchain>=0.3, <0.4",
+  "langchain-community>=0.3, <0.4",
+  "langchain-openai>=0.2, <0.3",
+  "langgraph>=0.2, <0.3",
+  "langgraph-checkpoint-postgres>=2.0, <2.1",
+  "pydantic>=2.9, <3.0",
+  "uvicorn[standard]==0.32.0",
+  "fastapi==0.115.5",
+  "PyYAML>=6.0, <6.1",
+  "dependency-injector>=4.43, <4.44",
+  "beautifulsoup4>=4.12, <4.13", # See https://thehftguy.com/2020/07/28/making-beautifulsoup-parsing-10-times-faster/
+  "lxml>=5.3, <5.4",
+]
+
+[project.scripts]
+kakao_chatbot = "llm_chatbot_for_messengers.main:run_kakao_chatbot"
 
 [tool.hatch.version]
 path = "src/llm_chatbot_for_messengers/__about__.py"
@@ -26,39 +40,148 @@ path = "src/llm_chatbot_for_messengers/__about__.py"
 [tool.hatch.envs.hatch-static-analysis]
 config-path = "ruff.toml"
 
+[tool.hatch.envs.hatch-test]
+extra-dependencies = ["pytest-asyncio>=0.24"]
+
+[tool.hatch.envs.hatch-test.env-vars]
+OPENAI_API_KEY = "{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+
+PROMPT_DIR = "tests/resources/prompt"
+CORE_DB_URI = "postgresql://postgres:happy@0.0.0.0:15432/llm_chatbot_for_messengers"
+
+[tool.hatch.envs.hatch-test.overrides]
+matrix.feature.platforms = [{ value = "macos" }]
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.11"]
+
+[tool.coverage.run]
+source_pkgs = ["llm_chatbot_for_messengers"]
+branch = true
+parallel = true
+omit = ["src/llm_chatbot_for_messengers/__about__.py"]
+
+[tool.coverage.paths]
+llm_chatbot_for_messengers = [
+  "src/llm_chatbot_for_messengers",
+  "*/llm_chatbot_for_messengers/src/llm_chatbot_for_messengers",
+]
+tests = ["tests", "*/llm_chatbot_for_messengers/tests"]
+
+[tool.coverage.report]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "strict"
+
 [tool.hatch.envs.default]
 installer = "uv"
+
+pre-install-commands = [
+  "$HATCH_UV sync --frozen > /dev/null 2>&1 || true" # Sync uv.lock if lockfile exists.
+]
+
+[tool.hatch.envs.default.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/llm-chatbot-for-messengers"
+OPENAI_API_KEY = "{env:OPENAI_API_KEY:<<YOUR OPENAI API KEY>>}"
+LANGCHAIN_TRACING_V2 = "{env:LANGCHAIN_TRACING_V2:false}"
+LANGCHAIN_API_KEY = "{env:LANGCHAIN_API_KEY:<<YOUR LANGSMITH API KEY>>}"
+LANGCHAIN_PROJECT = "{env:LANGCHAIN_PROJECT:<<YOUR LANGSMITH PROJECT NAME>>}"
+
+PROMPT_DIR = "src/resources/prompt"
+CORE_DB_URI = "{env:CORE_DB_URI:<<YOUR postgresql DB URI>>}"
+
+[tool.hatch.envs.default.scripts]
+pip = "$HATCH_UV pip {args}"
+
+[tool.hatch.envs.dev]
+extra-dependencies = [
+  "pytest>=8.3, <9.0",
+  "pytest-asyncio>=0.24",
+  "pre-commit >= 4.0",
+  "wheel",
+  "ipython",
+]
+
+[tool.hatch.envs.dev.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/dev"
+
+PROMPT_DIR = "src/resources/prompt"
+CORE_DB_URI = "postgresql://postgres:happy@0.0.0.0:15432/llm_chatbot_for_messengers"
+
+[tool.hatch.envs.dev.scripts]
+install_precommit = "pre-commit install"
+kakao-api = "uvicorn --host 0.0.0.0 --port 8000 --reload --workers 1 --log-level info --no-use-colors --app-dir src/llm_chatbot_for_messengers/messenger/kakao api:app >> dev-kakao.log 2>&1"
+shutdown-api = "ps aux | grep uvicorn | awk '{{print $2}}' | xargs kill -15"
 
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
+  "pytest>=8.3, <9.0",
+  "pytest-asyncio>=0.24",
+  "types-PyYAML>=6.0, <6.1",
+  "types-beautifulsoup4>=4.12, <4.13"
 ]
+
+[tool.hatch.envs.types.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/types"
+
 [tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/open_chatbot tests}"
+check = "mypy --check-untyped-defs --install-types --non-interactive {args:src/llm_chatbot_for_messengers tests}"
+[tool.mypy]
 
-[tool.coverage.run]
-source_pkgs = ["open_chatbot", "tests"]
-branch = true
-parallel = true
-omit = [
-  "src/open_chatbot/__about__.py",
+[tool.hatch.envs.linter]
+detached = true
+
+dependencies = [
+  "sqlfluff>=3.2, <3.3",
 ]
 
-[tool.coverage.paths]
-open_chatbot = ["src/open_chatbot", "*/open-chatbot/src/open_chatbot"]
-tests = ["tests", "*/open-chatbot/tests"]
+[tool.hatch.envs.linter.scripts]
+fix-sql = "sqlfluff fix ./scripts && sqlfluff lint ./scripts"
+fix-code = "hatch fmt"
 
-[tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
+[tool.sqlfluff.core]
+dialect = "postgres"
+templater = "jinja"
+sql_file_exts = ".sql,.sql.j2,.dml,.ddl"
+
+[tool.sqlfluff.indentation]
+indented_joins = false
+indented_using_on = true
+template_blocks_indent = false
+
+[tool.sqlfluff.templater]
+unwrap_wrapped_queries = true
+
+[tool.sqlfluff.templater.jinja]
+apply_dbt_builtins = true
+
+[tool.sqlfluff.rules.capitalisation.keywords]
+capitalisation_policy = "upper"
+
+[tool.hatch.envs.builder.env-vars]
+UV_PROJECT_ENVIRONMENT = ".venv/builder"
+
+[tool.hatch.envs.builder.extra-scripts]
+find-lock = "$HATCH_UV lock --frozen"
+check-lock = "$HATCH_UV lock --locked"
+update-lock = "$HATCH_UV lock"
+build-wheel = "$HATCH_UV sync --frozen && hatch build -t wheel"
+
+[tool.hatch.build.targets.wheel]
+sources = ["src"]
+only-packages = true
+packages = ["src/llm_chatbot_for_messengers"]
+exclude = ["**/__about__.py"]
+
+[tool.hatch.envs.docs]
+detached = true
+
+dependencies = [
+  "mkdocs >=1.6, <1.7",
+  "mkdocs-mermaid2-plugin >=1.2, <1.3",
 ]
 
-[tool.hatch.envs.ci]
-extra-dependencies = [
-  "pre-commit >= 4.0",
-]
-
-[tool.hatch.envs.ci.scripts]
-install_precommit = "pre-commit install"
+[tool.hatch.envs.docs.scripts]
+read = "mkdocs serve -o --no-livereload"

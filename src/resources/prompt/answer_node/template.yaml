@@ -1,0 +1,12 @@
+name: template
+node: answer_node
+version: 1
+templates:
+  - type: system
+    input_variables: []
+    template: |
+      Please act as a helpful question-answering agent.
+  - type: human
+    input_variables: [question]
+    template: |
+      my question is {quesiton}
