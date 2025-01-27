@@ -11,7 +11,7 @@ from llm_chatbot_for_messengers.core.specification import check_necessary_nodes,
 
 @unique
 class LLMProvider(Enum):
-    OPENAI: str = 'OPENAI'
+    OPENAI = 'OPENAI'
 
     def __str__(self):
         return self.value
